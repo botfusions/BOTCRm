@@ -1,12 +1,13 @@
-# 💎 Lumina CRM (Internal Codename: GlassFlow)
+# 💎 BOTSCRM - AI-Powered Revenue Engine
 
 <div align="center">
-  <img src="https://qlcbobvbircjhlglhfhr.supabase.co/storage/v1/object/public/image/cmr%20logo.png" width="140" alt="Lumina CRM Logo" />
+  <img src="https://qlcbobvbircjhlglhfhr.supabase.co/storage/v1/object/public/image/cmr%20logo.png" width="140" alt="BOTSCRM Logo" />
   
-  <h3>🚀 Revenue Automation Engine for Modern Teams</h3>
+  <h3>🚀 İşinizi Otomatize Eden Akıllı CRM Sistemi</h3>
 
   [![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react)](https://react.dev/)
-  [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
+  [![TypeScript](https://img.shields.io/badge/TypeScript-5.3-3178C6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
+  [![Vite](https://img.shields.io/badge/Vite-5.1-646CFF?style=for-the-badge&logo=vite)](https://vitejs.dev/)
   [![Tailwind](https://img.shields.io/badge/Tailwind-3.4-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
   [![Supabase](https://img.shields.io/badge/Supabase-DB-3ECF8E?style=for-the-badge&logo=supabase)](https://supabase.com/)
   [![AI](https://img.shields.io/badge/Gemini-AI-4285F4?style=for-the-badge&logo=google-gemini)](https://ai.google.dev/)
@@ -16,19 +17,107 @@
 ---
 
 ## ✨ Genel Bakış
-Lumina CRM, trafikten gelire giden yolu otomatize eden, **Glassmorphism** tasarım diline sahip, yüksek estetikli bir işletim sistemidir. Google Gemini AI desteği ile mesajları analiz eder, n8n ile dış dünya ile konuşur ve Supabase ile gerçek zamanlı veri senkronizasyonu sağlar.
 
-## 🛠️ Hızlı Kurulum (Sıfırdan Başlayanlar İçin)
+BOTSCRM, trafikten gelire giden yolu otomatize eden, **Glassmorphism** tasarım diline sahip, yüksek estetikli bir CRM işletim sistemidir. Google Gemini AI desteği ile mesajları analiz eder, n8n ile dış dünya ile konuşur ve Supabase ile gerçek zamanlı veri senkronizasyonu sağlar.
 
-### 1. Projeyi Klonlayın ve Bağımlılıkları Kurun
+### 🎯 Özellikler
+- **AI Lead Parsing:** Gelen karmaşık metinleri Gemini AI ile saniyeler içinde yapılandırılmış aday verisine dönüştürür
+- **n8n Bridge:** CRM'inizi Telegram, WhatsApp ve Gmail botlarınıza bağlar
+- **Real-time Engine:** Veritabanındaki her değişiklik tüm panellerde anında güncellenir
+- **Multi-Industry:** E-ticaret, Klinik, Emlak ve daha fazla sektör için hazır şablonlar
+
+---
+
+## 🛠️ Hızlı Kurulum
+
+### Gereksinimler
+- Node.js 18+
+- npm veya yarn
+- Supabase hesabı (ücretsiz)
+
+### 1. Projeyi Klonlayın
 ```bash
-git clone https://github.com/botfusions/BOTCRm.git
-cd BOTCRm
+git clone https://github.com/YOUR_USERNAME/BotCRm25122025.git
+cd BotCRm25122025
+```
+
+### 2. Bağımlılıkları Kurun
+```bash
 npm install
 ```
 
-### 2. Veritabanı Hazırlığı (Supabase)
-Aşağıdaki SQL kodunu Supabase **SQL Editor** kısmına yapıştırın ve çalıştırın. Bu işlem tüm sistemi aktif eder:
+### 3. Environment Değişkenlerini Ayarlayın
+```bash
+# .env.example dosyasını .env olarak kopyalayın
+cp .env.example .env
+
+# .env dosyasını düzenleyip gerçek değerleri girin:
+# - VITE_SUPABASE_URL
+# - VITE_SUPABASE_ANON_KEY
+# - GEMINI_API_KEY
+```
+
+> ⚠️ **Önemli:** `.env` dosyası Git'e **asla** eklenmez. Gizli bilgileriniz güvendedir.
+
+### 4. Uygulamayı Başlatın
+```bash
+npm run dev
+```
+
+Uygulama `http://localhost:3000` adresinde çalışacaktır.
+
+---
+
+## 📁 Proje Yapısı
+
+```
+BotCRm25122025/
+├── 📄 App.tsx                 # Ana uygulama bileşeni
+├── 📄 index.html              # HTML giriş noktası
+├── 📄 index.tsx               # React giriş noktası
+├── 📂 components/             # UI Bileşenleri
+│   ├── Dashboard.tsx          # Ana gösterge paneli
+│   ├── Sidebar.tsx            # Yan menü
+│   ├── Pipeline.tsx           # Satış pipeline'ı
+│   ├── Leads.tsx              # Müşteri adayları
+│   ├── Contacts.tsx           # Kişiler
+│   ├── Companies.tsx          # Şirketler
+│   ├── Tasks.tsx              # Görevler
+│   ├── Settings.tsx           # Ayarlar
+│   └── 📂 landing/            # Landing page bileşenleri
+│       ├── Hero.tsx
+│       ├── AuthForm.tsx
+│       ├── Pricing.tsx
+│       └── ...
+├── 📂 services/               # API Servisleri
+│   ├── client.ts              # Supabase client
+│   ├── leadService.ts         # Lead CRUD işlemleri
+│   ├── contactService.ts      # Contact CRUD işlemleri
+│   ├── companyService.ts      # Company CRUD işlemleri
+│   ├── taskService.ts         # Task CRUD işlemleri
+│   └── settingsService.ts     # Ayarlar servisi
+├── 📄 types.ts                # TypeScript tip tanımları
+├── 📄 constants.ts            # Sabit değerler
+├── 📄 vite.config.ts          # Vite yapılandırması
+├── 📄 tailwind.config.js      # Tailwind CSS yapılandırması
+├── 📄 .env.example            # Environment değişkenleri örneği
+└── 📄 .gitignore              # Git ignore kuralları
+```
+
+---
+
+## 🗄️ Veritabanı Şeması (Supabase)
+
+| Tablo | Açıklama |
+|-------|----------|
+| `bots_leads` | Müşteri adayları |
+| `bots_contacts` | Kişi bilgileri |
+| `bots_companies` | Şirket bilgileri |
+| `bots_tasks` | Görev ve iş takibi |
+| `bots_settings` | Kullanıcı ayarları (API keys, SMTP) |
+| `user` | Uygulama kullanıcıları |
+| `account` | Hesap bağlantıları |
+| `session` | Oturum yönetimi |
 
 <details>
 <summary>🔥 Master SQL Setup (Tıklayın ve Kopyalayın)</summary>
@@ -87,22 +176,52 @@ CREATE TABLE IF NOT EXISTS bots_settings (
 ```
 </details>
 
-### 3. Uygulamayı Başlatın
-```bash
-npm start
-```
-
-## 🤖 AI & Otomasyon Gücü
-- **AI Lead Parsing:** Gelen karmaşık metinleri Gemini AI ile saniyeler içinde yapılandırılmış aday verisine dönüştürür.
-- **n8n Bridge:** CRM'inizi Telegram, WhatsApp ve Gmail botlarınıza bağlar.
-- **Real-time Engine:** Veritabanındaki her değişiklik tüm panellerde anında (refreşsiz) güncellenir.
+---
 
 ## 🎨 Tasarım Felsefesi
-- **Glassmorphism:** Şeffaf katmanlar, bulanık arka planlar (backdrop-blur) ve neon ışık detayları.
-- **Dark-First:** Göz yormayan, profesyonel karanlık mod odaklı arayüz.
-- **Responsive:** Masaüstünden mobil cihazlara tam uyum.
+
+- **Glassmorphism:** Şeffaf katmanlar, bulanık arka planlar (backdrop-blur) ve neon ışık detayları
+- **Dark-First:** Göz yormayan, profesyonel karanlık mod odaklı arayüz
+- **Responsive:** Masaüstünden mobil cihazlara tam uyum
+- **Amber/Gold Accent:** Premium hissi veren altın renk tonları
 
 ---
+
+## 🔒 Güvenlik
+
+- ✅ Supabase credentials `.env` dosyasında saklanır
+- ✅ `.env` dosyası `.gitignore` ile korunur
+- ✅ Anon key ile Row Level Security (RLS) kullanılır
+- ✅ HTTPS üzerinden güvenli iletişim
+
+---
+
+## 📜 Scripts
+
+| Komut | Açıklama |
+|-------|----------|
+| `npm run dev` | Geliştirme sunucusunu başlatır (port 3000) |
+| `npm run build` | Production build oluşturur |
+| `npm run preview` | Production build'i önizler |
+
+---
+
+## 🤝 Katkıda Bulunma
+
+1. Fork yapın
+2. Feature branch oluşturun (`git checkout -b feature/amazing-feature`)
+3. Değişikliklerinizi commit edin (`git commit -m 'Add amazing feature'`)
+4. Branch'inizi push edin (`git push origin feature/amazing-feature`)
+5. Pull Request oluşturun
+
+---
+
+## 📄 Lisans
+
+MIT License - Detaylar için [LICENSE](LICENSE) dosyasına bakın.
+
+---
+
 <div align="center">
-  <sub>Developed with ❤️ by <b>botsCRM Team</b>. 2024</sub>
+  <sub>Developed with ❤️ by <b>BOTSCRM Team</b> | 2024-2025</sub>
 </div>

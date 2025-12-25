@@ -37,8 +37,8 @@ BOTSCRM, trafikten gelire giden yolu otomatize eden, **Glassmorphism** tasarım 
 
 ### 1. Projeyi Klonlayın
 ```bash
-git clone https://github.com/YOUR_USERNAME/BotCRm25122025.git
-cd BotCRm25122025
+git clone https://github.com/botfusions/BOTCRm.git
+cd BOTCRm
 ```
 
 ### 2. Bağımlılıkları Kurun
@@ -190,9 +190,12 @@ CREATE TABLE IF NOT EXISTS bots_settings (
 ## 🔒 Güvenlik
 
 - ✅ Supabase credentials `.env` dosyasında saklanır
-- ✅ `.env` dosyası `.gitignore` ile korunur
+- ✅ `.env` dosyası `.gitignore` ile korunur (GitHub'a **ASLA** gitmez)
 - ✅ Anon key ile Row Level Security (RLS) kullanılır
 - ✅ HTTPS üzerinden güvenli iletişim
+- ✅ **Şifre güçlülük kontrolü:** Min 8 karakter, 1 büyük, 1 küçük, 1 rakam
+- ✅ **Demo mode tracking:** Oturum izleme ve güvenlik denetimi
+- ✅ TypeScript strict mode ile tip güvenliği
 
 ---
 
@@ -223,5 +226,7 @@ MIT License - Detaylar için [LICENSE](LICENSE) dosyasına bakın.
 ---
 
 <div align="center">
-  <sub>Developed with ❤️ by <b>BOTSCRM Team</b> | 2024-2025</sub>
+  <sub>Developed with ❤️ by <b>BotFusions Team</b> | 2024-2025</sub>
+  <br/>
+  <a href="https://github.com/botfusions/BOTCRm">⭐ Star us on GitHub</a>
 </div>

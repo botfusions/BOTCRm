@@ -66,11 +66,11 @@ const AuthForm: React.FC<AuthFormProps> = ({ isOpen, onClose, onSuccess, languag
 
     try {
       if (isLogin) {
-        const { error: signInError, data } = await supabase.auth.signInWithPassword({ 
-          email: email.trim(), 
-          password: password.trim() 
+        const { error: signInError, data } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password: password.trim()
         });
-        
+
         if (signInError) {
           // Supabase hata mesajlarını yakala
           if (signInError.message.includes("Email not confirmed")) {
@@ -81,29 +81,39 @@ const AuthForm: React.FC<AuthFormProps> = ({ isOpen, onClose, onSuccess, languag
           }
           throw signInError;
         }
-        
+
         if (data.session) {
           onSuccess();
           onClose();
         }
       } else {
+        // 🔒 SECURITY: Password strength validation
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+        if (!passwordRegex.test(password)) {
+          throw new Error(
+            language === 'TR'
+              ? 'Şifre en az 8 karakter, 1 büyük harf, 1 küçük harf ve 1 rakam içermelidir.'
+              : 'Password must be at least 8 characters with 1 uppercase, 1 lowercase, and 1 number.'
+          );
+        }
+
         const { error: signUpError, data } = await supabase.auth.signUp({
           email: email.trim(),
           password: password.trim(),
-          options: { 
-            data: { 
+          options: {
+            data: {
               full_name: fullName,
               phone_number: phone
-            } 
+            }
           }
         });
-        
+
         if (signUpError) throw signUpError;
-        
+
         if (data.user) {
-            await triggerWelcomeEmail(email, fullName);
-            setError(language === 'TR' ? "Kayıt başarılı! Lütfen e-postanızı onaylayın." : "Success! Please confirm your email.");
-            setTimeout(() => setIsLogin(true), 3000);
+          await triggerWelcomeEmail(email, fullName);
+          setError(language === 'TR' ? "Kayıt başarılı! Lütfen e-postanızı onaylayın." : "Success! Please confirm your email.");
+          setTimeout(() => setIsLogin(true), 3000);
         }
       }
     } catch (err: any) {
@@ -114,6 +124,12 @@ const AuthForm: React.FC<AuthFormProps> = ({ isOpen, onClose, onSuccess, languag
   };
 
   const handleDemoMode = () => {
+    // 🔒 SECURITY: Mark this as a demo session for tracking
+    // Demo sessions have limited access and are logged for security auditing
+    sessionStorage.setItem('botscrm_demo_mode', 'true');
+    sessionStorage.setItem('botscrm_demo_started', new Date().toISOString());
+
+    console.info('🎮 Demo mode activated - Limited access session');
     onSuccess();
     onClose();
   };
@@ -122,14 +138,14 @@ const AuthForm: React.FC<AuthFormProps> = ({ isOpen, onClose, onSuccess, languag
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
             className="absolute inset-0 bg-black/80 backdrop-blur-md"
           />
-          
+
           <motion.div
             initial={{ scale: 0.9, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -161,9 +177,9 @@ const AuthForm: React.FC<AuthFormProps> = ({ isOpen, onClose, onSuccess, languag
                   <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 ml-1">{t.name}</label>
                   <div className="relative">
                     <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-600" />
-                    <input 
+                    <input
                       required
-                      type="text" 
+                      type="text"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       className="w-full rounded-2xl border border-white/5 bg-black/40 py-3.5 pl-12 pr-4 text-sm text-white focus:border-amber-500/50 focus:outline-none transition-all"
@@ -177,10 +193,10 @@ const AuthForm: React.FC<AuthFormProps> = ({ isOpen, onClose, onSuccess, languag
                 <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 ml-1">{t.email}</label>
                 <div className="relative">
                   <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-600" />
-                  <input 
+                  <input
                     required
                     autoFocus
-                    type="email" 
+                    type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full rounded-2xl border border-white/5 bg-black/40 py-3.5 pl-12 pr-4 text-sm text-white focus:border-amber-500/50 focus:outline-none transition-all"
@@ -194,9 +210,9 @@ const AuthForm: React.FC<AuthFormProps> = ({ isOpen, onClose, onSuccess, languag
                   <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 ml-1">{t.phone}</label>
                   <div className="relative">
                     <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-600" />
-                    <input 
+                    <input
                       required
-                      type="tel" 
+                      type="tel"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       className="w-full rounded-2xl border border-white/5 bg-black/40 py-3.5 pl-12 pr-4 text-sm text-white focus:border-amber-500/50 focus:outline-none transition-all"
@@ -210,9 +226,9 @@ const AuthForm: React.FC<AuthFormProps> = ({ isOpen, onClose, onSuccess, languag
                 <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 ml-1">{t.pass}</label>
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-600" />
-                  <input 
+                  <input
                     required
-                    type="password" 
+                    type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="w-full rounded-2xl border border-white/5 bg-black/40 py-3.5 pl-12 pr-4 text-sm text-white focus:border-amber-500/50 focus:outline-none transition-all"
@@ -229,9 +245,9 @@ const AuthForm: React.FC<AuthFormProps> = ({ isOpen, onClose, onSuccess, languag
               )}
 
               <div className="space-y-3 pt-2">
-                <button 
+                <button
                   disabled={loading}
-                  type="submit" 
+                  type="submit"
                   className="group relative w-full overflow-hidden rounded-2xl bg-white py-4 text-sm font-bold text-black transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50"
                 >
                   <div className="relative z-10 flex items-center justify-center gap-2">
@@ -241,7 +257,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ isOpen, onClose, onSuccess, languag
                 </button>
 
                 {isLogin && (
-                  <button 
+                  <button
                     type="button"
                     onClick={handleDemoMode}
                     className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-white/5 border border-white/10 text-white text-xs font-black uppercase tracking-widest hover:bg-amber-500/10 hover:border-amber-500/50 hover:text-amber-500 hover:shadow-[0_0_20px_rgba(234,179,8,0.2)] transition-all"
@@ -253,7 +269,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ isOpen, onClose, onSuccess, languag
             </form>
 
             <div className="relative z-10 mt-6 text-center">
-              <button 
+              <button
                 onClick={() => {
                   setIsLogin(!isLogin);
                   setError(null);
@@ -265,8 +281,8 @@ const AuthForm: React.FC<AuthFormProps> = ({ isOpen, onClose, onSuccess, languag
             </div>
 
             <div className="mt-6 flex items-center justify-center gap-2 pt-4 border-t border-white/5 opacity-40">
-                <ShieldCheck className="h-3.5 w-3.5 text-zinc-400" />
-                <span className="text-[9px] font-medium tracking-widest text-zinc-400 uppercase">BOTSCRm Secure Node</span>
+              <ShieldCheck className="h-3.5 w-3.5 text-zinc-400" />
+              <span className="text-[9px] font-medium tracking-widest text-zinc-400 uppercase">BOTSCRm Secure Node</span>
             </div>
           </motion.div>
         </div>

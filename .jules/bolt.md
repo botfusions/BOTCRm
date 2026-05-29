@@ -1,0 +1,3 @@
+## 2024-05-29 - Dashboard Metric Calculation Optimization
+**Learning:** Multiple passes over a dataset using `reduce`, `filter`, etc., can be consolidated into a single $O(N)$ pass within a `useMemo` block to improve performance and reduce intermediate array allocations. Moving static configuration objects outside of components and using `React.memo` effectively prevents unnecessary re-renders in heavy dashboard views.
+**Action:** Always check for redundant array iterations in components that handle large datasets and consolidate them into single-pass calculations. Use `React.memo` and externalize static objects for frequently re-rendered UI elements like metric cards.

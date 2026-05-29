@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar 
 } from 'recharts';
@@ -32,10 +32,32 @@ const Dashboard: React.FC<DashboardProps> = ({ darkMode }) => {
     }
   };
 
-  const totalRevenue = leads.reduce((acc, l) => acc + (l.status === 'Won' ? l.value : 0), 0);
-  const pipelineValue = leads.reduce((acc, l) => acc + l.value, 0);
-  const activeDeals = leads.length;
-  const winRate = leads.length > 0 ? ((leads.filter(l => l.status === 'Won').length / leads.length) * 100).toFixed(1) : 0;
+  // Memoize metrics calculation to perform a single O(N) pass and avoid unnecessary re-calculations
+  const { totalRevenue, pipelineValue, activeDeals, winRate } = useMemo(() => {
+    const count = leads.length;
+    if (count === 0) {
+      return { totalRevenue: 0, pipelineValue: 0, activeDeals: 0, winRate: 0 };
+    }
+
+    let wonCount = 0;
+    let totalRev = 0;
+    let pipeValue = 0;
+
+    for (const lead of leads) {
+      pipeValue += lead.value;
+      if (lead.status === 'Won') {
+        totalRev += lead.value;
+        wonCount++;
+      }
+    }
+
+    return {
+      totalRevenue: totalRev,
+      pipelineValue: pipeValue,
+      activeDeals: count,
+      winRate: ((wonCount / count) * 100).toFixed(1)
+    };
+  }, [leads]);
 
   const bgMain = darkMode ? 'bg-slate-950' : 'bg-[#F3F4F6]';
   const cardClass = `relative overflow-hidden rounded-3xl border transition-all duration-300 ${
@@ -154,16 +176,17 @@ const Dashboard: React.FC<DashboardProps> = ({ darkMode }) => {
   );
 };
 
+const METRIC_COLORS = {
+    amber: { bg: 'bg-amber-500/10', text: 'text-amber-500', border: 'border-amber-500/20' },
+    indigo: { bg: 'bg-indigo-500/10', text: 'text-indigo-500', border: 'border-indigo-500/20' },
+    rose: { bg: 'bg-rose-500/10', text: 'text-rose-500', border: 'border-rose-500/20' },
+    emerald: { bg: 'bg-emerald-500/10', text: 'text-emerald-500', border: 'border-emerald-500/20' },
+};
+
 const MetricCard: React.FC<{
     title: string, value: string, trend: string, trendUp: boolean, icon: any, color: 'amber' | 'indigo' | 'rose' | 'emerald', darkMode: boolean
-}> = ({ title, value, trend, trendUp, icon: Icon, color, darkMode }) => {
-    const colors = {
-        amber: { bg: 'bg-amber-500/10', text: 'text-amber-500', border: 'border-amber-500/20' },
-        indigo: { bg: 'bg-indigo-500/10', text: 'text-indigo-500', border: 'border-indigo-500/20' },
-        rose: { bg: 'bg-rose-500/10', text: 'text-rose-500', border: 'border-rose-500/20' },
-        emerald: { bg: 'bg-emerald-500/10', text: 'text-emerald-500', border: 'border-emerald-500/20' },
-    };
-    const c = colors[color];
+}> = React.memo(({ title, value, trend, trendUp, icon: Icon, color, darkMode }) => {
+    const c = METRIC_COLORS[color];
     return (
         <div className={`relative overflow-hidden rounded-3xl p-6 border transition-all duration-300 group ${darkMode ? 'bg-zinc-900/40 border-white/5 backdrop-blur-md hover:bg-zinc-900/60' : 'bg-white border-slate-100 shadow-sm'}`}>
             <div className="flex justify-between items-start mb-4">
@@ -177,6 +200,6 @@ const MetricCard: React.FC<{
             <p className={`text-sm font-medium ${darkMode ? 'text-zinc-500' : 'text-slate-400'}`}>{title}</p>
         </div>
     );
-}
+});
 
 export default Dashboard;

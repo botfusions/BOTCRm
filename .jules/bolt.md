@@ -1,3 +1,7 @@
 ## 2024-05-29 - Dashboard Metric Calculation Optimization
 **Learning:** Multiple passes over a dataset using `reduce`, `filter`, etc., can be consolidated into a single $O(N)$ pass within a `useMemo` block to improve performance and reduce intermediate array allocations. Moving static configuration objects outside of components and using `React.memo` effectively prevents unnecessary re-renders in heavy dashboard views.
 **Action:** Always check for redundant array iterations in components that handle large datasets and consolidate them into single-pass calculations. Use `React.memo` and externalize static objects for frequently re-rendered UI elements like metric cards.
+
+## 2024-05-30 - Code Splitting and Navigation Memoization
+**Learning:** Route-level code splitting using `React.lazy` and `Suspense` significantly reduces the initial bundle size by decoupling heavy components (like those using `recharts` or `@google/genai`) from the main bundle. Memoizing static-but-localized configuration objects (like sidebar navigation) with `useMemo` prevents unnecessary object allocations and improves reconciliation performance during frequent state updates.
+**Action:** Always consider lazy loading for components that are not part of the initial view or carry heavy dependencies. Use `useMemo` for configuration objects that depend on simple props like 'language' to avoid re-renders and GC pressure.

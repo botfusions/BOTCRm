@@ -1,16 +1,18 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import Sidebar from './components/Sidebar';
-import Dashboard from './components/Dashboard';
-import Pipeline from './components/Pipeline';
-import Leads from './components/Leads';
-import Tasks from './components/Tasks';
-import Settings from './components/Settings';
-import Contacts from './components/Contacts';
-import Companies from './components/Companies';
-import LandingPage from './components/landing/Page';
 import { Tab } from './types';
 import { Construction, Bell, Search, HelpCircle, Plus, Loader2 } from 'lucide-react';
+
+// Lazy load components to improve initial bundle size and load time
+const Dashboard = lazy(() => import('./components/Dashboard'));
+const Pipeline = lazy(() => import('./components/Pipeline'));
+const Leads = lazy(() => import('./components/Leads'));
+const Tasks = lazy(() => import('./components/Tasks'));
+const Settings = lazy(() => import('./components/Settings'));
+const Contacts = lazy(() => import('./components/Contacts'));
+const Companies = lazy(() => import('./components/Companies'));
+const LandingPage = lazy(() => import('./components/landing/Page'));
 import { supabase } from './services/client';
 
 const App: React.FC = () => {
@@ -110,7 +112,17 @@ const App: React.FC = () => {
     );
   }
 
-  if (showLanding) return <LandingPage onLogin={handleLogin} language={language} setLanguage={setLanguage} />;
+  if (showLanding) {
+    return (
+      <Suspense fallback={
+        <div className="h-screen w-full bg-[#030303] flex items-center justify-center">
+          <Loader2 className="w-10 h-10 text-amber-500 animate-spin" />
+        </div>
+      }>
+        <LandingPage onLogin={handleLogin} language={language} setLanguage={setLanguage} />
+      </Suspense>
+    );
+  }
 
   return (
     <div className={`flex h-screen w-full overflow-hidden transition-colors duration-300 ${darkMode ? 'bg-slate-950 text-slate-100' : 'bg-[#F3F4F6] text-slate-900'}`}>
@@ -146,7 +158,15 @@ const App: React.FC = () => {
                 </div>
             </div>
         </header>
-        <main className="flex-1 overflow-hidden">{renderContent()}</main>
+        <main className="flex-1 overflow-hidden">
+          <Suspense fallback={
+            <div className="h-full w-full flex items-center justify-center">
+              <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
+            </div>
+          }>
+            {renderContent()}
+          </Suspense>
+        </main>
       </div>
     </div>
   );

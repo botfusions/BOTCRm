@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { 
   LayoutGrid, 
   Inbox, 
@@ -40,34 +40,34 @@ const Sidebar: React.FC<SidebarProps> = ({
   onLogout
 }) => {
   
-  const mainNav = [
+  // Memoize navigation arrays to prevent recreation on every render
+  const mainNav = useMemo(() => [
     { id: Tab.DASHBOARD, icon: LayoutGrid, label: language === 'TR' ? 'Gösterge Paneli' : 'Dashboard' },
     { id: Tab.INBOX, icon: Inbox, label: language === 'TR' ? 'Gelen Kutusu' : 'Inbox' },
     { id: Tab.LEADS, icon: Users, label: language === 'TR' ? 'Adaylar' : 'Leads' },
     { id: Tab.CONTACTS, icon: Users, label: language === 'TR' ? 'Kişiler' : 'Contacts' },
     { id: Tab.COMPANIES, icon: Building2, label: language === 'TR' ? 'Şirketler' : 'Companies' },
     { id: Tab.TASKS, icon: CheckSquare, label: language === 'TR' ? 'Görevler' : 'Tasks' },
-  ];
+  ], [language]);
 
-  const communicationNav = [
+  const communicationNav = useMemo(() => [
     { id: Tab.CALLS, icon: Phone, label: language === 'TR' ? 'Aramalar' : 'Calls' },
     { id: Tab.EMAILS, icon: Mail, label: language === 'TR' ? 'E-postalar' : 'Emails' },
-  ];
+  ], [language]);
 
-  const channelsNav = [
+  const channelsNav = useMemo(() => [
     { id: Tab.INSTAGRAM, icon: Instagram, label: 'Instagram' },
     { id: Tab.WHATSAPP, icon: MessageCircle, label: 'WhatsApp' },
     { id: Tab.TELEGRAM, icon: Send, label: 'Telegram' },
-  ];
+  ], []);
 
-  const analyticsNav = [
+  const analyticsNav = useMemo(() => [
     { id: Tab.ANALYTICS, icon: BarChart3, label: language === 'TR' ? 'Analitik' : 'Analytics' },
-  ];
+  ], [language]);
 
-  // New System/Admin Section
-  const systemNav = [
+  const systemNav = useMemo(() => [
     { id: Tab.SETTINGS, icon: SettingsIcon, label: language === 'TR' ? 'Ayarlar & Admin' : 'Settings & Admin' },
-  ];
+  ], [language]);
 
   const renderNavItem = (item: { id: Tab, icon: any, label: string }) => {
     const isActive = activeTab === item.id;

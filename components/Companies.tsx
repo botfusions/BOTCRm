@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Company } from '../types';
 import { fetchCompanies, createCompany } from '../services/companyService';
 import { Search, Building2, MapPin, MoreVertical, Loader2, Database, Zap, Plus, X, LayoutGrid, List, ExternalLink, DollarSign } from 'lucide-react';
@@ -37,10 +37,16 @@ const Companies: React.FC<CompaniesProps> = ({ darkMode }) => {
     const textMain = darkMode ? 'text-white' : 'text-slate-900';
     const textSub = darkMode ? 'text-slate-400' : 'text-slate-500';
 
-    const filteredCompanies = companies.filter(c => 
-        c.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        c.industry.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    // Memoize filtered companies to optimize performance during search and re-renders
+    const filteredCompanies = useMemo(() => {
+        const lowerSearch = searchTerm.toLowerCase();
+        if (!lowerSearch) return companies;
+
+        return companies.filter(c =>
+            c.name.toLowerCase().includes(lowerSearch) ||
+            c.industry.toLowerCase().includes(lowerSearch)
+        );
+    }, [companies, searchTerm]);
 
     return (
          <div className={`h-full flex flex-col p-8 ${darkMode ? 'bg-slate-950' : 'bg-[#F3F4F6]'}`}>

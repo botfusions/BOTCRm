@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { CheckCircle2, Circle, Calendar, Plus, Filter, Link as LinkIcon, X, Save, Loader2, Database, Terminal, Zap } from 'lucide-react';
 import { Task } from '../types';
 import { fetchTasks, createTask, toggleTaskStatus } from '../services/taskService';
@@ -61,11 +61,14 @@ const Tasks: React.FC<TasksProps> = ({ darkMode }) => {
     }
   };
 
-  const filteredTasks = tasks.filter(t => {
-    if (filter === 'completed') return t.completed;
-    if (filter === 'pending') return !t.completed;
-    return true;
-  });
+  // Memoize filtered tasks to prevent redundant filtering on every render
+  const filteredTasks = useMemo(() => {
+    return tasks.filter(t => {
+      if (filter === 'completed') return t.completed;
+      if (filter === 'pending') return !t.completed;
+      return true;
+    });
+  }, [tasks, filter]);
 
   const bgCard = darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200';
   const textMain = darkMode ? 'text-white' : 'text-slate-900';

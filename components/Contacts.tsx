@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
     Search, MoreHorizontal, Phone, Mail, UserPlus, Trash2, X, Save, Eye, 
     Download, LayoutGrid, List, Loader2, Database, Terminal, Zap, ExternalLink 
@@ -95,11 +95,17 @@ const Contacts: React.FC<ContactsProps> = ({ darkMode, language = 'TR' }) => {
     const textMain = darkMode ? 'text-white' : 'text-slate-900';
     const textSub = darkMode ? 'text-slate-400' : 'text-slate-500';
 
-    const filteredContacts = contacts.filter(c => 
-        c.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.title.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    // Memoize filtered contacts to avoid expensive re-filtering and string operations on every render
+    const filteredContacts = useMemo(() => {
+        const lowerSearch = searchTerm.toLowerCase();
+        if (!lowerSearch) return contacts;
+
+        return contacts.filter(c =>
+            c.fullName.toLowerCase().includes(lowerSearch) ||
+            c.email.toLowerCase().includes(lowerSearch) ||
+            (c.title && c.title.toLowerCase().includes(lowerSearch))
+        );
+    }, [contacts, searchTerm]);
 
     if (errorType === 'CONTACTS_TABLE_NOT_FOUND') {
         const sqlCode = `CREATE TABLE bots_contacts (

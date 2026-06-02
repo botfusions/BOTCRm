@@ -5,3 +5,7 @@
 ## 2024-05-30 - Code Splitting and Navigation Memoization
 **Learning:** Route-level code splitting using `React.lazy` and `Suspense` significantly reduces the initial bundle size by decoupling heavy components (like those using `recharts` or `@google/genai`) from the main bundle. Memoizing static-but-localized configuration objects (like sidebar navigation) with `useMemo` prevents unnecessary object allocations and improves reconciliation performance during frequent state updates.
 **Action:** Always consider lazy loading for components that are not part of the initial view or carry heavy dependencies. Use `useMemo` for configuration objects that depend on simple props like 'language' to avoid re-renders and GC pressure.
+
+## 2024-05-31 - Memoized List Filtering and Search Optimization
+**Learning:** Performing list filtering and string transformations (like `.toLowerCase()`) directly in the component body results in redundant computations on every re-render, especially during rapid input updates. Pre-calculating search term variations outside the filter loop and wrapping the result in `useMemo` significantly reduces CPU usage and improves input responsiveness for large lists.
+**Action:** Always memoize derived lists that depend on search filters or status toggles. Ensure that invariant operations (like lowercasing the search term) are performed once before the filtering loop begins.

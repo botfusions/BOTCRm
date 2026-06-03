@@ -14,6 +14,36 @@ interface LeadsProps {
   language?: 'TR' | 'EN';
 }
 
+const LeadRow: React.FC<{
+  lead: Lead;
+  textMain: string;
+  onSelect: (lead: Lead) => void;
+}> = React.memo(({ lead, textMain, onSelect }) => (
+  <tr onClick={() => onSelect(lead)} className="hover:bg-indigo-500/5 transition-colors cursor-pointer group">
+    <td className="p-5">
+      <div className="flex items-center gap-3">
+        <img
+          src={lead.avatarUrl}
+          className="w-9 h-9 rounded-full border border-slate-200 shadow-sm"
+          loading="lazy"
+          alt=""
+        />
+        <span className={`text-sm font-bold ${textMain}`}>{lead.fullName}</span>
+      </div>
+    </td>
+    <td className="p-5">
+        <p className="text-xs font-medium text-slate-500">{lead.email}</p>
+        <p className="text-[10px] font-bold text-indigo-500 mt-0.5">{lead.phone}</p>
+    </td>
+    <td className="p-5">
+        <span className="px-2.5 py-1 rounded-lg text-[10px] font-black bg-indigo-500/10 text-indigo-500 border border-indigo-500/20 uppercase">{lead.status}</span>
+    </td>
+    <td className="p-5 text-sm font-bold text-emerald-500">${lead.value.toLocaleString()}</td>
+    <td className="p-5 text-xs text-slate-500 font-bold uppercase tracking-widest">{lead.source}</td>
+    <td className="p-5 text-right"><Plus className="w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-colors" /></td>
+  </tr>
+));
+
 const Leads: React.FC<LeadsProps> = ({ darkMode, language = 'TR' }) => {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -185,24 +215,12 @@ const Leads: React.FC<LeadsProps> = ({ darkMode, language = 'TR' }) => {
                 </thead>
                 <tbody className={`divide-y ${darkMode ? 'divide-slate-800' : 'divide-slate-100'}`}>
                   {leads.map((lead) => (
-                      <tr key={lead.id} onClick={() => setSelectedLead(lead)} className="hover:bg-indigo-500/5 transition-colors cursor-pointer group">
-                        <td className="p-5">
-                          <div className="flex items-center gap-3">
-                            <img src={lead.avatarUrl} className="w-9 h-9 rounded-full border border-slate-200 shadow-sm" />
-                            <span className={`text-sm font-bold ${textMain}`}>{lead.fullName}</span>
-                          </div>
-                        </td>
-                        <td className="p-5">
-                            <p className="text-xs font-medium text-slate-500">{lead.email}</p>
-                            <p className="text-[10px] font-bold text-indigo-500 mt-0.5">{lead.phone}</p>
-                        </td>
-                        <td className="p-5">
-                            <span className="px-2.5 py-1 rounded-lg text-[10px] font-black bg-indigo-500/10 text-indigo-500 border border-indigo-500/20 uppercase">{lead.status}</span>
-                        </td>
-                        <td className="p-5 text-sm font-bold text-emerald-500">${lead.value.toLocaleString()}</td>
-                        <td className="p-5 text-xs text-slate-500 font-bold uppercase tracking-widest">{lead.source}</td>
-                        <td className="p-5 text-right"><Plus className="w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-colors" /></td>
-                      </tr>
+                    <LeadRow
+                      key={lead.id}
+                      lead={lead}
+                      textMain={textMain}
+                      onSelect={setSelectedLead}
+                    />
                   ))}
                   {!loading && leads.length === 0 && (
                       <tr>

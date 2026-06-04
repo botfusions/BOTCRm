@@ -16,11 +16,7 @@ const Tasks: React.FC<TasksProps> = ({ darkMode }) => {
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [errorType, setErrorType] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadTasks();
-  }, []);
-
-  const loadTasks = async () => {
+  const loadTasks = React.useCallback(async () => {
     setLoading(true);
     setErrorType(null);
     try {
@@ -33,14 +29,18 @@ const Tasks: React.FC<TasksProps> = ({ darkMode }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const toggleTask = async (id: string, currentStatus: boolean) => {
+  useEffect(() => {
+    loadTasks();
+  }, [loadTasks]);
+
+  const toggleTask = React.useCallback(async (id: string, currentStatus: boolean) => {
     // Optimistic
-    setTasks(tasks.map(t => t.id === id ? { ...t, completed: !currentStatus } : t));
+    setTasks(prev => prev.map(t => t.id === id ? { ...t, completed: !currentStatus } : t));
     const success = await toggleTaskStatus(id, !currentStatus);
     if (!success) loadTasks();
-  };
+  }, [loadTasks]);
 
   const handleAddTask = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -154,17 +154,13 @@ const Tasks: React.FC<TasksProps> = ({ darkMode }) => {
                 <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
             </div>
         ) : filteredTasks.map((task) => (
-            <div key={task.id} className={`flex items-center justify-between p-5 rounded-2xl border transition-all ${bgCard} ${task.completed ? 'opacity-50' : 'hover:border-indigo-500/30'}`}>
-                <div className="flex items-center gap-4">
-                    <button onClick={() => toggleTask(task.id, task.completed)} className={task.completed ? 'text-emerald-500' : 'text-slate-300'}>
-                        {task.completed ? <CheckCircle2 className="w-6 h-6" /> : <Circle className="w-6 h-6" />}
-                    </button>
-                    <span className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-slate-800'} ${task.completed ? 'line-through opacity-50' : ''}`}>{task.title}</span>
-                </div>
-                <div className="flex items-center gap-4 text-xs text-slate-500">
-                    <Calendar className="w-4 h-4" /> {task.dueDate}
-                </div>
-            </div>
+            <TaskItem
+              key={task.id}
+              task={task}
+              darkMode={darkMode}
+              bgCard={bgCard}
+              onToggle={toggleTask}
+            />
         ))}
         {!loading && filteredTasks.length === 0 && (
             <div className="py-20 text-center opacity-30">
@@ -190,5 +186,26 @@ const Tasks: React.FC<TasksProps> = ({ darkMode }) => {
     </div>
   );
 };
+
+interface TaskItemProps {
+  task: Task;
+  darkMode: boolean;
+  bgCard: string;
+  onToggle: (id: string, status: boolean) => void;
+}
+
+const TaskItem: React.FC<TaskItemProps> = React.memo(({ task, darkMode, bgCard, onToggle }) => (
+  <div className={`flex items-center justify-between p-5 rounded-2xl border transition-all ${bgCard} ${task.completed ? 'opacity-50' : 'hover:border-indigo-500/30'}`}>
+    <div className="flex items-center gap-4">
+        <button onClick={() => onToggle(task.id, task.completed)} className={task.completed ? 'text-emerald-500' : 'text-slate-300'}>
+            {task.completed ? <CheckCircle2 className="w-6 h-6" /> : <Circle className="w-6 h-6" />}
+        </button>
+        <span className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-slate-800'} ${task.completed ? 'line-through opacity-50' : ''}`}>{task.title}</span>
+    </div>
+    <div className="flex items-center gap-4 text-xs text-slate-500">
+        <Calendar className="w-4 h-4" /> {task.dueDate}
+    </div>
+  </div>
+));
 
 export default Tasks;

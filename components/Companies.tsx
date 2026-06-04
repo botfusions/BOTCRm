@@ -91,7 +91,7 @@ const Companies: React.FC<CompaniesProps> = ({ darkMode }) => {
                         {filteredCompanies.map(company => (
                             <div key={company.id} className={`p-6 rounded-3xl border transition-all hover:border-indigo-500/30 group ${bgCard} hover:shadow-xl hover:scale-[1.01]`}>
                                 <div className="flex items-center gap-5 mb-6">
-                                    <img src={company.logoUrl} className="w-16 h-16 rounded-2xl object-cover border border-slate-100 shadow-sm" />
+                                    <img src={company.logoUrl} className="w-16 h-16 rounded-2xl object-cover border border-slate-100 shadow-sm" loading="lazy" />
                                     <div>
                                         <h3 className={`text-lg font-black tracking-tight ${textMain}`}>{company.name}</h3>
                                         <span className="px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-500 text-[9px] font-black uppercase tracking-widest border border-indigo-500/20">{company.industry}</span>
@@ -138,7 +138,7 @@ const Companies: React.FC<CompaniesProps> = ({ darkMode }) => {
                                     <tr key={c.id} className="hover:bg-indigo-500/5 transition-colors group">
                                         <td className="p-5">
                                             <div className="flex items-center gap-3">
-                                                <img src={c.logoUrl} className="w-8 h-8 rounded-lg" />
+                                                <img src={c.logoUrl} className="w-8 h-8 rounded-lg" loading="lazy" />
                                                 <span className={`text-sm font-bold ${textMain}`}>{c.name}</span>
                                             </div>
                                         </td>

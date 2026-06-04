@@ -191,7 +191,7 @@ const Contacts: React.FC<ContactsProps> = ({ darkMode, language = 'TR' }) => {
                                 </div>
                                 <div className="px-8 pb-10 -mt-12 relative z-10">
                                     <div className="flex items-end gap-5 mb-6">
-                                        <img src={contact.avatarUrl} className="w-24 h-24 rounded-3xl border-4 border-white dark:border-slate-900 shadow-2xl bg-slate-100" alt="" />
+                                        <img src={contact.avatarUrl} className="w-24 h-24 rounded-3xl border-4 border-white dark:border-slate-900 shadow-2xl bg-slate-100" alt="" loading="lazy" />
                                         <div className="pb-1.5">
                                             <h3 className={`text-xl font-black tracking-tight leading-none ${textMain}`}>{contact.fullName}</h3>
                                             <p className="text-sm font-bold text-indigo-500 mt-1 uppercase tracking-widest">{contact.title || 'Müşteri'}</p>
@@ -235,7 +235,7 @@ const Contacts: React.FC<ContactsProps> = ({ darkMode, language = 'TR' }) => {
                                     <tr key={c.id} className="hover:bg-indigo-500/5 transition-colors group">
                                         <td className="p-5">
                                             <div className="flex items-center gap-4">
-                                                <img src={c.avatarUrl} className="w-10 h-10 rounded-xl" />
+                                                <img src={c.avatarUrl} className="w-10 h-10 rounded-xl" loading="lazy" />
                                                 <span className={`text-sm font-bold ${textMain}`}>{c.fullName}</span>
                                             </div>
                                         </td>

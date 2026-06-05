@@ -8,6 +8,64 @@ interface CompaniesProps {
     darkMode: boolean;
 }
 
+const CompanyCard: React.FC<{
+    company: Company;
+    bgCard: string;
+    textMain: string;
+    textSub: string;
+}> = React.memo(({ company, bgCard, textMain, textSub }) => (
+    <div className={`p-6 rounded-3xl border transition-all hover:border-indigo-500/30 group ${bgCard} hover:shadow-xl hover:scale-[1.01]`}>
+        <div className="flex items-center gap-5 mb-6">
+            <img src={company.logoUrl} className="w-16 h-16 rounded-2xl object-cover border border-slate-100 shadow-sm" loading="lazy" alt="" />
+            <div>
+                <h3 className={`text-lg font-black tracking-tight ${textMain}`}>{company.name}</h3>
+                <span className="px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-500 text-[9px] font-black uppercase tracking-widest border border-indigo-500/20">{company.industry}</span>
+            </div>
+        </div>
+        <div className="space-y-4 mb-6">
+            <div className="flex items-center gap-3 text-slate-500">
+                <MapPin className="w-4 h-4 text-rose-500" />
+                <span className="text-xs font-bold uppercase tracking-wide">{company.location}</span>
+            </div>
+            <div className="flex items-center gap-3 text-emerald-500">
+                <DollarSign className="w-4 h-4" />
+                <span className="text-xs font-black tracking-widest uppercase">HASILAT: {company.revenue}</span>
+            </div>
+        </div>
+        <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
+            <span className={`px-4 py-1 rounded-xl text-[9px] font-black uppercase border shadow-sm
+                ${company.status === 'Client' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' :
+                    company.status === 'Partner' ? 'bg-indigo-500/10 text-indigo-500 border-indigo-500/20' :
+                    'bg-amber-500/10 text-amber-500 border-amber-500/20'}
+                `}>
+                    {company.status}
+                </span>
+                <button className={`p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 ${textSub}`}><MoreVertical className="w-5 h-5" /></button>
+        </div>
+    </div>
+));
+
+const CompanyRow: React.FC<{
+    company: Company;
+    textMain: string;
+}> = React.memo(({ company, textMain }) => (
+    <tr className="hover:bg-indigo-500/5 transition-colors group">
+        <td className="p-5">
+            <div className="flex items-center gap-3">
+                <img src={company.logoUrl} className="w-8 h-8 rounded-lg" loading="lazy" alt="" />
+                <span className={`text-sm font-bold ${textMain}`}>{company.name}</span>
+            </div>
+        </td>
+        <td className="p-5 text-xs text-slate-500 font-bold uppercase">{company.industry}</td>
+        <td className="p-5 text-xs text-slate-500 font-medium">{company.location}</td>
+        <td className="p-5 text-xs font-bold text-emerald-500">{company.revenue}</td>
+        <td className="p-5">
+            <span className="px-3 py-1 rounded-lg bg-indigo-500/10 text-indigo-500 text-[10px] font-black uppercase tracking-widest">{company.status}</span>
+        </td>
+        <td className="p-5 text-right"><ExternalLink className="w-4 h-4 text-slate-400 opacity-0 group-hover:opacity-100 transition-all" /></td>
+    </tr>
+));
+
 const Companies: React.FC<CompaniesProps> = ({ darkMode }) => {
     const [companies, setCompanies] = useState<Company[]>([]);
     const [loading, setLoading] = useState(true);
@@ -89,35 +147,13 @@ const Companies: React.FC<CompaniesProps> = ({ darkMode }) => {
                 ) : viewType === 'grid' ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                         {filteredCompanies.map(company => (
-                            <div key={company.id} className={`p-6 rounded-3xl border transition-all hover:border-indigo-500/30 group ${bgCard} hover:shadow-xl hover:scale-[1.01]`}>
-                                <div className="flex items-center gap-5 mb-6">
-                                    <img src={company.logoUrl} className="w-16 h-16 rounded-2xl object-cover border border-slate-100 shadow-sm" />
-                                    <div>
-                                        <h3 className={`text-lg font-black tracking-tight ${textMain}`}>{company.name}</h3>
-                                        <span className="px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-500 text-[9px] font-black uppercase tracking-widest border border-indigo-500/20">{company.industry}</span>
-                                    </div>
-                                </div>
-                                <div className="space-y-4 mb-6">
-                                    <div className="flex items-center gap-3 text-slate-500">
-                                        <MapPin className="w-4 h-4 text-rose-500" />
-                                        <span className="text-xs font-bold uppercase tracking-wide">{company.location}</span>
-                                    </div>
-                                    <div className="flex items-center gap-3 text-emerald-500">
-                                        <DollarSign className="w-4 h-4" />
-                                        <span className="text-xs font-black tracking-widest uppercase">HASILAT: {company.revenue}</span>
-                                    </div>
-                                </div>
-                                <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
-                                    <span className={`px-4 py-1 rounded-xl text-[9px] font-black uppercase border shadow-sm
-                                        ${company.status === 'Client' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 
-                                          company.status === 'Partner' ? 'bg-indigo-500/10 text-indigo-500 border-indigo-500/20' : 
-                                          'bg-amber-500/10 text-amber-500 border-amber-500/20'}
-                                     `}>
-                                         {company.status}
-                                     </span>
-                                     <button className={`p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 ${textSub}`}><MoreVertical className="w-5 h-5" /></button>
-                                </div>
-                            </div>
+                            <CompanyCard
+                                key={company.id}
+                                company={company}
+                                bgCard={bgCard}
+                                textMain={textMain}
+                                textSub={textSub}
+                            />
                         ))}
                     </div>
                 ) : (
@@ -135,21 +171,11 @@ const Companies: React.FC<CompaniesProps> = ({ darkMode }) => {
                             </thead>
                             <tbody className={`divide-y ${darkMode ? 'divide-slate-800' : 'divide-slate-100'}`}>
                                 {filteredCompanies.map(c => (
-                                    <tr key={c.id} className="hover:bg-indigo-500/5 transition-colors group">
-                                        <td className="p-5">
-                                            <div className="flex items-center gap-3">
-                                                <img src={c.logoUrl} className="w-8 h-8 rounded-lg" />
-                                                <span className={`text-sm font-bold ${textMain}`}>{c.name}</span>
-                                            </div>
-                                        </td>
-                                        <td className="p-5 text-xs text-slate-500 font-bold uppercase">{c.industry}</td>
-                                        <td className="p-5 text-xs text-slate-500 font-medium">{c.location}</td>
-                                        <td className="p-5 text-xs font-bold text-emerald-500">{c.revenue}</td>
-                                        <td className="p-5">
-                                            <span className="px-3 py-1 rounded-lg bg-indigo-500/10 text-indigo-500 text-[10px] font-black uppercase tracking-widest">{c.status}</span>
-                                        </td>
-                                        <td className="p-5 text-right"><ExternalLink className="w-4 h-4 text-slate-400 opacity-0 group-hover:opacity-100 transition-all" /></td>
-                                    </tr>
+                                    <CompanyRow
+                                        key={c.id}
+                                        company={c}
+                                        textMain={textMain}
+                                    />
                                 ))}
                                 {filteredCompanies.length === 0 && (
                                     <tr>

@@ -13,3 +13,7 @@
 ## 2026-06-02 - List Row Memoization and Lazy Loading
 **Learning:** In components with frequent state updates (like AI input or manual forms) alongside a large list, re-rendering the entire list on every keystroke causes significant performance degradation. Extracting list items into a `React.memo`'d component effectively isolates re-renders to only the changed inputs. Additionally, native `loading="lazy"` on images reduces initial asset overhead for long lists.
 **Action:** Extract and memoize list item components in views with interactive forms. Use stable callback props and native lazy loading for images in these components.
+
+## 2026-06-06 - Recovery Path Consistency in Optimistic Updates
+**Learning:** When implementing optimistic updates with error recovery, reusing memoized data loaders (wrapped in `useCallback`) inside the recovery path ensures that side effects like error state management (e.g., `setErrorType`) are applied consistently across the application. Directly fetching data in the recovery path bypassing these loaders leads to fragmented state logic.
+**Action:** Always reuse existing data loading hooks or callbacks in error recovery paths for optimistic updates to maintain state consistency.

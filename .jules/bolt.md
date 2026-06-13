@@ -13,3 +13,7 @@
 ## 2026-06-02 - List Row Memoization and Lazy Loading
 **Learning:** In components with frequent state updates (like AI input or manual forms) alongside a large list, re-rendering the entire list on every keystroke causes significant performance degradation. Extracting list items into a `React.memo`'d component effectively isolates re-renders to only the changed inputs. Additionally, native `loading="lazy"` on images reduces initial asset overhead for long lists.
 **Action:** Extract and memoize list item components in views with interactive forms. Use stable callback props and native lazy loading for images in these components.
+
+## 2026-06-13 - Task List Memoization and Callback Stabilization
+**Learning:** Extracting list items into a `React.memo`'d component and stabilizing parent callbacks with `useCallback` prevents redundant re-renders of the entire list when individual items are updated or when the parent's unrelated state (like a modal input) changes.
+**Action:** Consistently apply the memoization pattern for list items and use functional state updates within stabilized callbacks to remove unnecessary dependencies.

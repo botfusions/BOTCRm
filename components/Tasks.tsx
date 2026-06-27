@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { CheckCircle2, Circle, Calendar, Plus, Filter, Link as LinkIcon, X, Save, Loader2, Database, Terminal, Zap } from 'lucide-react';
 import { Task } from '../types';
 import { fetchTasks, createTask, toggleTaskStatus } from '../services/taskService';
@@ -7,6 +7,34 @@ import { fetchTasks, createTask, toggleTaskStatus } from '../services/taskServic
 interface TasksProps {
   darkMode: boolean;
 }
+
+/**
+ * ⚡ PERFORMANCE OPTIMIZATION: TaskItem is memoized to prevent redundant re-renders
+ * of the entire list when a single task's status is toggled or when filtering changes.
+ */
+const TaskItem: React.FC<{
+  task: Task;
+  darkMode: boolean;
+  bgCard: string;
+  onToggle: (id: string, currentStatus: boolean) => void;
+}> = React.memo(({ task, darkMode, bgCard, onToggle }) => (
+  <div className={`flex items-center justify-between p-5 rounded-2xl border transition-all ${bgCard} ${task.completed ? 'opacity-50' : 'hover:border-indigo-500/30'}`}>
+    <div className="flex items-center gap-4">
+      <button
+        onClick={() => onToggle(task.id, task.completed)}
+        className={task.completed ? 'text-emerald-500' : 'text-slate-300'}
+      >
+        {task.completed ? <CheckCircle2 className="w-6 h-6" /> : <Circle className="w-6 h-6" />}
+      </button>
+      <span className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-slate-800'} ${task.completed ? 'line-through opacity-50' : ''}`}>
+        {task.title}
+      </span>
+    </div>
+    <div className="flex items-center gap-4 text-xs text-slate-500">
+      <Calendar className="w-4 h-4" /> {task.dueDate}
+    </div>
+  </div>
+));
 
 const Tasks: React.FC<TasksProps> = ({ darkMode }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -16,11 +44,11 @@ const Tasks: React.FC<TasksProps> = ({ darkMode }) => {
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [errorType, setErrorType] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadTasks();
-  }, []);
-
-  const loadTasks = async () => {
+  /**
+   * ⚡ PERFORMANCE OPTIMIZATION: Callbacks are stabilized using useCallback
+   * to ensure referential integrity when passed to memoized children or effects.
+   */
+  const loadTasks = useCallback(async () => {
     setLoading(true);
     setErrorType(null);
     try {
@@ -33,16 +61,24 @@ const Tasks: React.FC<TasksProps> = ({ darkMode }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [setLoading, setTasks, setErrorType]);
 
-  const toggleTask = async (id: string, currentStatus: boolean) => {
-    // Optimistic
-    setTasks(tasks.map(t => t.id === id ? { ...t, completed: !currentStatus } : t));
+  useEffect(() => {
+    loadTasks();
+  }, [loadTasks]);
+
+  const toggleTask = useCallback(async (id: string, currentStatus: boolean) => {
+    // Optimistic update with functional state to avoid stale closures
+    setTasks(prev => prev.map(t => t.id === id ? { ...t, completed: !currentStatus } : t));
+
     const success = await toggleTaskStatus(id, !currentStatus);
-    if (!success) loadTasks();
-  };
+    if (!success) {
+      // Rollback on failure
+      loadTasks();
+    }
+  }, [setTasks, loadTasks]);
 
-  const handleAddTask = async (e: React.FormEvent) => {
+  const handleAddTask = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTaskTitle.trim()) return;
     
@@ -55,11 +91,11 @@ const Tasks: React.FC<TasksProps> = ({ darkMode }) => {
 
     const savedTask = await createTask(newTask);
     if (savedTask) {
-      setTasks([savedTask, ...tasks]);
+      setTasks(prev => [savedTask, ...prev]);
       setNewTaskTitle('');
       setIsModalOpen(false);
     }
-  };
+  }, [newTaskTitle, setTasks, setNewTaskTitle, setIsModalOpen]);
 
   // Memoize filtered tasks to prevent redundant filtering on every render
   const filteredTasks = useMemo(() => {
@@ -74,7 +110,6 @@ const Tasks: React.FC<TasksProps> = ({ darkMode }) => {
   const textMain = darkMode ? 'text-white' : 'text-slate-900';
 
   if (errorType === 'TASKS_TABLE_NOT_FOUND') {
-    // Fixed SQL snippet to use correct table names used by taskService
     const sqlCode = `CREATE TABLE bots_tasks (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
@@ -154,17 +189,13 @@ const Tasks: React.FC<TasksProps> = ({ darkMode }) => {
                 <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
             </div>
         ) : filteredTasks.map((task) => (
-            <div key={task.id} className={`flex items-center justify-between p-5 rounded-2xl border transition-all ${bgCard} ${task.completed ? 'opacity-50' : 'hover:border-indigo-500/30'}`}>
-                <div className="flex items-center gap-4">
-                    <button onClick={() => toggleTask(task.id, task.completed)} className={task.completed ? 'text-emerald-500' : 'text-slate-300'}>
-                        {task.completed ? <CheckCircle2 className="w-6 h-6" /> : <Circle className="w-6 h-6" />}
-                    </button>
-                    <span className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-slate-800'} ${task.completed ? 'line-through opacity-50' : ''}`}>{task.title}</span>
-                </div>
-                <div className="flex items-center gap-4 text-xs text-slate-500">
-                    <Calendar className="w-4 h-4" /> {task.dueDate}
-                </div>
-            </div>
+            <TaskItem
+              key={task.id}
+              task={task}
+              darkMode={darkMode}
+              bgCard={bgCard}
+              onToggle={toggleTask}
+            />
         ))}
         {!loading && filteredTasks.length === 0 && (
             <div className="py-20 text-center opacity-30">
@@ -181,7 +212,14 @@ const Tasks: React.FC<TasksProps> = ({ darkMode }) => {
                       <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-white"><X className="w-5 h-5"/></button>
                   </div>
                   <form onSubmit={handleAddTask} className="space-y-4">
-                      <input required autoFocus placeholder="Görev başlığı..." value={newTaskTitle} onChange={e => setNewTaskTitle(e.target.value)} className={`w-full px-4 py-3 rounded-xl border outline-none focus:ring-2 focus:ring-indigo-500/20 ${darkMode ? 'bg-slate-950 border-slate-800 text-white focus:border-indigo-500' : 'bg-slate-50 focus:border-indigo-500'}`} />
+                      <input
+                        required
+                        autoFocus
+                        placeholder="Görev başlığı..."
+                        value={newTaskTitle}
+                        onChange={e => setNewTaskTitle(e.target.value)}
+                        className={`w-full px-4 py-3 rounded-xl border outline-none focus:ring-2 focus:ring-indigo-500/20 ${darkMode ? 'bg-slate-950 border-slate-800 text-white focus:border-indigo-500' : 'bg-slate-50 focus:border-indigo-500'}`}
+                      />
                       <button type="submit" className="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-600/20">BULUTA EKLE</button>
                   </form>
               </div>

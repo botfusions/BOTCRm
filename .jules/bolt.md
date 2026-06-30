@@ -13,3 +13,7 @@
 ## 2026-06-02 - List Row Memoization and Lazy Loading
 **Learning:** In components with frequent state updates (like AI input or manual forms) alongside a large list, re-rendering the entire list on every keystroke causes significant performance degradation. Extracting list items into a `React.memo`'d component effectively isolates re-renders to only the changed inputs. Additionally, native `loading="lazy"` on images reduces initial asset overhead for long lists.
 **Action:** Extract and memoize list item components in views with interactive forms. Use stable callback props and native lazy loading for images in these components.
+
+## 2024-06-05 - State Isolation for Form Inputs and Constant Hoisting
+**Learning:** In components managing both large datasets and complex interactive forms, co-locating the form state with the list data triggers expensive reconciliation of the entire list on every keystroke. "Pushing state down" into isolated form components prevents this. Additionally, hoisting static arrays (like process stages) outside of components avoids redundant allocations and helps React's diffing algorithm.
+**Action:** Isolate high-frequency state updates (like text inputs) into standalone components to protect large sibling elements from re-rendering. Always hoist static configuration arrays to the module level.

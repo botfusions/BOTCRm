@@ -19,20 +19,25 @@ interface OpportunityDetailsProps {
   onBack: () => void;
 }
 
+/**
+ * ⚡ PERFORMANCE OPTIMIZATION: Static Data Hoisting
+ * Hoisted the 'STAGES' array outside the component to prevent redundant
+ * allocations and improve reconciliation efficiency on every render.
+ */
+const STAGES = [
+  { name: 'Prospecting', status: 'completed' },
+  { name: 'Qualified', status: 'completed' },
+  { name: 'Discovery', status: 'completed' },
+  { name: 'Proposal Sent', status: 'current' },
+  { name: 'Negotiation', status: 'upcoming' },
+  { name: 'Closed', status: 'upcoming' },
+];
+
 const OpportunityDetails: React.FC<OpportunityDetailsProps> = ({ darkMode, language, onBack }) => {
   const bgCard = darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200';
   const textMain = darkMode ? 'text-white' : 'text-slate-900';
   const textSub = darkMode ? 'text-slate-400' : 'text-slate-500';
   const border = darkMode ? 'border-slate-800' : 'border-slate-200';
-
-  const stages = [
-    { name: 'Prospecting', status: 'completed' },
-    { name: 'Qualified', status: 'completed' },
-    { name: 'Discovery', status: 'completed' },
-    { name: 'Proposal Sent', status: 'current' },
-    { name: 'Negotiation', status: 'upcoming' },
-    { name: 'Closed', status: 'upcoming' },
-  ];
 
   return (
     <div className={`h-full flex flex-col overflow-hidden ${darkMode ? 'bg-slate-950' : 'bg-[#F3F4F6]'}`}>
@@ -86,7 +91,7 @@ const OpportunityDetails: React.FC<OpportunityDetailsProps> = ({ darkMode, langu
                         {/* Connecting Line */}
                         <div className={`absolute top-1/2 left-0 w-full h-0.5 -translate-y-1/2 -z-0 ${darkMode ? 'bg-slate-800' : 'bg-slate-100'}`}></div>
                         
-                        {stages.map((stage, index) => (
+                        {STAGES.map((stage, index) => (
                             <div key={index} className="relative z-10 flex flex-col items-center gap-2 bg-inherit px-2">
                                 <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold border-2 transition-colors
                                     ${stage.status === 'completed' ? 'bg-slate-900 border-slate-900 text-white dark:bg-white dark:border-white dark:text-slate-900' : 

@@ -1,10 +1,10 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Lead, LeadStatus, Source } from '../types';
 import { fetchLeads, createLead } from '../services/leadService';
 import { 
-  Search, Plus, Loader2, 
-  Trash2, X, Save, Wand2, Database, Zap, AlertTriangle, Terminal, Wifi, Globe, Mail, Phone, DollarSign
+  Plus, Loader2,
+  X, Wand2, Database, Zap, AlertTriangle, Wifi
 } from 'lucide-react';
 import OpportunityDetails from './OpportunityDetails';
 import { GoogleGenAI, Type } from "@google/genai";
@@ -44,16 +44,20 @@ const LeadRow: React.FC<{
   </tr>
 ));
 
-const Leads: React.FC<LeadsProps> = ({ darkMode, language = 'TR' }) => {
-  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
-  const [leads, setLeads] = useState<Lead[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [errorType, setErrorType] = useState<string | null>(null);
-  const [parsing, setParsing] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+/**
+ * ⚡ PERFORMANCE OPTIMIZATION: AICapturePanel
+ * Extracted the AI text analysis and manual input form into a standalone component.
+ * This "pushes state down," preventing the main Leads table from re-rendering
+ * on every keystroke in the textarea or input fields.
+ */
+const AICapturePanel: React.FC<{
+  darkMode: boolean;
+  language: 'TR' | 'EN';
+  onLeadCreated: (lead: Lead) => void;
+}> = React.memo(({ darkMode, language, onLeadCreated }) => {
   const [rawText, setRawText] = useState('');
+  const [parsing, setParsing] = useState(false);
   const [duplicateError, setDuplicateError] = useState(false);
-  
   const [newLead, setNewLead] = useState({
     fullName: '',
     email: '',
@@ -61,25 +65,6 @@ const Leads: React.FC<LeadsProps> = ({ darkMode, language = 'TR' }) => {
     value: 0,
     source: Source.MANUAL
   });
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    setLoading(true);
-    setErrorType(null);
-    try {
-      const data = await fetchLeads();
-      setLeads(data);
-    } catch (err: any) {
-      if (err.message === 'TABLE_NOT_FOUND') {
-        setErrorType('TABLE_NOT_FOUND');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const parseWithAI = async () => {
     if (!rawText.trim()) return;
@@ -140,6 +125,126 @@ const Leads: React.FC<LeadsProps> = ({ darkMode, language = 'TR' }) => {
         });
 
         if (savedLead) {
+          onLeadCreated(savedLead);
+          setNewLead({ fullName: '', email: '', phone: '', value: 0, source: Source.MANUAL });
+        }
+    } catch (error: any) {
+        if (error.message === 'DUPLICATE_RECORD') {
+            setDuplicateError(true);
+            setTimeout(() => setDuplicateError(false), 5000);
+        }
+    }
+  };
+
+  const bgCard = darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200';
+
+  return (
+    <div className={`shrink-0 p-6 rounded-3xl border-t-4 border-t-indigo-600 shadow-2xl ${bgCard} relative overflow-hidden`}>
+        <div className="absolute top-0 right-0 p-1 opacity-5"><Zap className="w-32 h-32 text-indigo-500" /></div>
+        {duplicateError && (
+            <div className="mb-4 animate-in slide-in-from-top-4 duration-300">
+                <div className="flex items-center gap-3 p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl">
+                    <AlertTriangle className="w-4 h-4 text-amber-500" />
+                    <p className="text-xs font-bold text-amber-500">Bu e-posta adresiyle kayıtlı bir aday zaten mevcut.</p>
+                </div>
+            </div>
+        )}
+        <div className="flex flex-col lg:flex-row gap-6">
+            <div className="flex-1 space-y-2">
+                <div className="flex items-center gap-2 mb-1">
+                    <Wand2 className="w-4 h-4 text-indigo-500" />
+                    <label className={`text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500`}>AI Metin Analiz Motoru</label>
+                </div>
+                <div className="relative">
+                    <textarea
+                        value={rawText}
+                        onChange={(e) => setRawText(e.target.value)}
+                        className={`w-full h-24 p-4 rounded-2xl border text-sm outline-none transition-all ${darkMode ? 'bg-slate-950 border-slate-800 text-white focus:border-indigo-500' : 'bg-slate-50 border-slate-200 focus:border-indigo-500'}`}
+                        placeholder="Müşteri mesajını buraya yapıştırın, AI bilgileri ayıklasın..."
+                    />
+                    <button onClick={parseWithAI} disabled={parsing || !rawText.trim()} className="absolute bottom-3 right-3 px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-[10px] font-black shadow-lg hover:bg-indigo-700 disabled:opacity-50 transition-all uppercase tracking-widest">
+                        {parsing ? <Loader2 className="w-4 h-4 animate-spin" /> : "Analiz Et"}
+                    </button>
+                </div>
+            </div>
+            <div className="flex-[1.5]">
+                <form onSubmit={handleQuickSave} className="grid grid-cols-2 md:grid-cols-4 gap-4 items-end h-full">
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Tam Adı</label>
+                        <input required value={newLead.fullName} onChange={e => setNewLead({...newLead, fullName: e.target.value})} className={`w-full px-4 py-3 rounded-xl border text-sm font-bold ${darkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-200'}`} />
+                    </div>
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">E-Posta</label>
+                        <input required type="email" value={newLead.email} onChange={e => setNewLead({...newLead, email: e.target.value})} className={`w-full px-4 py-3 rounded-xl border text-sm font-bold ${darkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-200'}`} />
+                    </div>
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Telefon</label>
+                        <input required value={newLead.phone} onChange={e => setNewLead({...newLead, phone: e.target.value})} className={`w-full px-4 py-3 rounded-xl border text-sm font-bold ${darkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-200'}`} />
+                    </div>
+                    <button type="submit" className="px-6 py-3 bg-emerald-600 text-white rounded-xl text-[10px] font-black tracking-widest hover:bg-emerald-700 shadow-xl shadow-emerald-600/20 transition-all uppercase">
+                        Supabase Kaydet
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+  );
+});
+
+const Leads: React.FC<LeadsProps> = ({ darkMode, language = 'TR' }) => {
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [errorType, setErrorType] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [duplicateError, setDuplicateError] = useState(false);
+
+  const [newLead, setNewLead] = useState({
+    fullName: '',
+    email: '',
+    phone: '',
+    value: 0,
+    source: Source.MANUAL
+  });
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    setLoading(true);
+    setErrorType(null);
+    try {
+      const data = await fetchLeads();
+      setLeads(data);
+    } catch (err: any) {
+      if (err.message === 'TABLE_NOT_FOUND') {
+        setErrorType('TABLE_NOT_FOUND');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleModalSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setDuplicateError(false);
+
+    if (!newLead.fullName || !newLead.email || !newLead.phone) {
+        alert(language === 'TR' ? 'Lütfen en az Ad, E-posta ve Telefon bilgilerini doldurun.' : 'Please fill in Name, Email and Phone fields.');
+        return;
+    }
+
+    try {
+        const savedLead = await createLead({
+          ...newLead,
+          status: LeadStatus.NEW,
+          tags: ['BOTSCRm-MANUAL'],
+          lastActivity: new Date().toISOString(),
+          avatarUrl: `https://ui-avatars.com/api/?name=${newLead.fullName}&background=6366f1&color=fff`
+        });
+
+        if (savedLead) {
           setLeads(prev => [savedLead, ...prev]);
           setNewLead({ fullName: '', email: '', phone: '', value: 0, source: Source.MANUAL });
           setIsModalOpen(false);
@@ -151,6 +256,10 @@ const Leads: React.FC<LeadsProps> = ({ darkMode, language = 'TR' }) => {
         }
     }
   };
+
+  const handleLeadCreated = useCallback((lead: Lead) => {
+    setLeads(prev => [lead, ...prev]);
+  }, []);
 
   const bgCard = darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200';
   const textMain = darkMode ? 'text-white' : 'text-slate-900';
@@ -184,15 +293,6 @@ const Leads: React.FC<LeadsProps> = ({ darkMode, language = 'TR' }) => {
             </button>
           </div>
         </header>
-
-        {duplicateError && (
-            <div className="mb-6 animate-in slide-in-from-top-4 duration-300">
-                <div className="flex items-center gap-3 p-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl">
-                    <AlertTriangle className="w-5 h-5 text-amber-500" />
-                    <p className="text-sm font-bold text-amber-500">Bu e-posta adresiyle kayıtlı bir aday zaten sistemde mevcut.</p>
-                </div>
-            </div>
-        )}
 
         <div className={`flex-1 overflow-hidden border rounded-3xl shadow-sm ${bgCard} mb-6`}>
           {loading ? (
@@ -236,48 +336,11 @@ const Leads: React.FC<LeadsProps> = ({ darkMode, language = 'TR' }) => {
           )}
         </div>
 
-        {/* AI CAPTURE PANEL */}
-        <div className={`shrink-0 p-6 rounded-3xl border-t-4 border-t-indigo-600 shadow-2xl ${bgCard} relative overflow-hidden`}>
-            <div className="absolute top-0 right-0 p-1 opacity-5"><Zap className="w-32 h-32 text-indigo-500" /></div>
-            <div className="flex flex-col lg:flex-row gap-6">
-                <div className="flex-1 space-y-2">
-                    <div className="flex items-center gap-2 mb-1">
-                        <Wand2 className="w-4 h-4 text-indigo-500" />
-                        <label className={`text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500`}>AI Metin Analiz Motoru</label>
-                    </div>
-                    <div className="relative">
-                        <textarea 
-                            value={rawText}
-                            onChange={(e) => setRawText(e.target.value)}
-                            className={`w-full h-24 p-4 rounded-2xl border text-sm outline-none transition-all ${darkMode ? 'bg-slate-950 border-slate-800 text-white focus:border-indigo-500' : 'bg-slate-50 border-slate-200 focus:border-indigo-500'}`}
-                            placeholder="Müşteri mesajını buraya yapıştırın, AI bilgileri ayıklasın..."
-                        />
-                        <button onClick={parseWithAI} disabled={parsing || !rawText.trim()} className="absolute bottom-3 right-3 px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-[10px] font-black shadow-lg hover:bg-indigo-700 disabled:opacity-50 transition-all uppercase tracking-widest">
-                            {parsing ? <Loader2 className="w-4 h-4 animate-spin" /> : "Analiz Et"}
-                        </button>
-                    </div>
-                </div>
-                <div className="flex-[1.5]">
-                    <form onSubmit={handleQuickSave} className="grid grid-cols-2 md:grid-cols-4 gap-4 items-end h-full">
-                        <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Tam Adı</label>
-                            <input required value={newLead.fullName} onChange={e => setNewLead({...newLead, fullName: e.target.value})} className={`w-full px-4 py-3 rounded-xl border text-sm font-bold ${darkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-200'}`} />
-                        </div>
-                        <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">E-Posta</label>
-                            <input required type="email" value={newLead.email} onChange={e => setNewLead({...newLead, email: e.target.value})} className={`w-full px-4 py-3 rounded-xl border text-sm font-bold ${darkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-200'}`} />
-                        </div>
-                        <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Telefon</label>
-                            <input required value={newLead.phone} onChange={e => setNewLead({...newLead, phone: e.target.value})} className={`w-full px-4 py-3 rounded-xl border text-sm font-bold ${darkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-200'}`} />
-                        </div>
-                        <button type="submit" className="px-6 py-3 bg-emerald-600 text-white rounded-xl text-[10px] font-black tracking-widest hover:bg-emerald-700 shadow-xl shadow-emerald-600/20 transition-all uppercase">
-                            Supabase Kaydet
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
+        <AICapturePanel
+          darkMode={darkMode}
+          language={language}
+          onLeadCreated={handleLeadCreated}
+        />
 
         {isModalOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-300">
@@ -291,7 +354,7 @@ const Leads: React.FC<LeadsProps> = ({ darkMode, language = 'TR' }) => {
                             Bu e-posta zaten kullanımda!
                         </div>
                     )}
-                    <form onSubmit={handleQuickSave} className="space-y-5">
+                    <form onSubmit={handleModalSave} className="space-y-5">
                         <div className="space-y-1.5">
                             <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Müşteri İsmi</label>
                             <input required placeholder="Ad Soyad" value={newLead.fullName} onChange={e => setNewLead({...newLead, fullName: e.target.value})} className={`w-full px-6 py-4 rounded-2xl border text-sm font-bold outline-none focus:border-indigo-500 transition-all ${darkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-200'}`} />

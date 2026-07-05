@@ -9,65 +9,73 @@ interface IndustryShowcaseProps {
     onAction?: () => void;
 }
 
-const IndustryShowcase: React.FC<IndustryShowcaseProps> = ({ language, onAction }) => {
-    
-    const content = {
-        EN: {
-            headline: "Perfect Fit For",
-            headlineHighlight: "Every Industry",
-            sub: "Our AI agents adapt to your specific business needs, automating the complex workflows unique to your sector.",
-            cta: "Try Now"
-        },
-        TR: {
-            headline: "Her Sektör İçin",
-            headlineHighlight: "Mükemmel Uyum",
-            sub: "Yapay zeka ajanlarımız, sektörünüze özgü karmaşık iş akışlarını otomatikleştirerek özel iş ihtiyaçlarınıza uyum sağlar.",
-            cta: "Hemen Dene"
-        }
-    };
+/**
+ * ⚡ PERFORMANCE OPTIMIZATION: Hoisted static content outside the component body
+ * to prevent re-allocation on every render.
+ */
+const SHOWCASE_CONTENT = {
+    EN: {
+        headline: "Perfect Fit For",
+        headlineHighlight: "Every Industry",
+        sub: "Our AI agents adapt to your specific business needs, automating the complex workflows unique to your sector.",
+        cta: "Try Now"
+    },
+    TR: {
+        headline: "Her Sektör İçin",
+        headlineHighlight: "Mükemmel Uyum",
+        sub: "Yapay zeka ajanlarımız, sektörünüze özgü karmaşık iş akışlarını otomatikleştirerek özel iş ihtiyaçlarınıza uyum sağlar.",
+        cta: "Hemen Dene"
+    }
+};
 
-    const industries = [
-        {
-            id: 'ecommerce',
-            label: language === 'TR' ? 'E-Ticaret' : 'E-Commerce',
-            description: language === 'TR' 
-                ? 'Terk edilmiş sepetleri kurtarın, sipariş durumlarını otomatik bildirin ve satış sonrası desteği 7/24 sağlayın.' 
-                : 'Automate abandoned cart recovery, order status notifications, and provide 24/7 post-purchase support.',
-            icon: ShoppingBag,
-            secondaryIcon: TrendingUp,
-            color: 'text-amber-500',
-            bgGradient: 'from-amber-500/20 to-orange-600/20',
-            glowColor: 'shadow-amber-500/50',
-            borderColor: 'border-amber-500/30'
-        },
-        {
-            id: 'clinic',
-            label: language === 'TR' ? 'Klinik & Sağlık' : 'Clinic & Health',
-            description: language === 'TR' 
-                ? 'Randevu hatırlatmaları, hasta takibi ve tedavi sonrası bakım talimatlarını otomatikleştirin.' 
-                : 'Streamline appointment reminders, patient follow-ups, and automate post-treatment care instructions.',
-            icon: Activity,
-            secondaryIcon: MessageCircle,
-            color: 'text-cyan-500',
-            bgGradient: 'from-cyan-400/20 to-blue-600/20',
-            glowColor: 'shadow-cyan-500/50',
-            borderColor: 'border-cyan-500/30'
-        },
-        {
-            id: 'realestate',
-            label: language === 'TR' ? 'Emlak & Konut' : 'Real Estate',
-            description: language === 'TR' 
-                ? 'Potansiyel müşterilere anında portföy sunumu yapın ve randevu takvimini yönetin.' 
-                : 'Instantly present portfolios to new leads, qualify prospects, and manage viewing schedules automatically.',
-            icon: Building2,
-            secondaryIcon: BarChart3,
-            color: 'text-emerald-500',
-            bgGradient: 'from-emerald-400/20 to-green-600/20',
-            glowColor: 'shadow-emerald-500/50',
-            borderColor: 'border-emerald-500/30'
-        }
-    ];
+const getIndustries = (language: 'TR' | 'EN') => [
+    {
+        id: 'ecommerce',
+        label: language === 'TR' ? 'E-Ticaret' : 'E-Commerce',
+        description: language === 'TR'
+            ? 'Terk edilmiş sepetleri kurtarın, sipariş durumlarını otomatik bildirin ve satış sonrası desteği 7/24 sağlayın.'
+            : 'Automate abandoned cart recovery, order status notifications, and provide 24/7 post-purchase support.',
+        icon: ShoppingBag,
+        secondaryIcon: TrendingUp,
+        color: 'text-amber-500',
+        bgGradient: 'from-amber-500/20 to-orange-600/20',
+        glowColor: 'shadow-amber-500/50',
+        borderColor: 'border-amber-500/30'
+    },
+    {
+        id: 'clinic',
+        label: language === 'TR' ? 'Klinik & Sağlık' : 'Clinic & Health',
+        description: language === 'TR'
+            ? 'Randevu hatırlatmaları, hasta takibi ve tedavi sonrası bakım talimatlarını otomatikleştirin.'
+            : 'Streamline appointment reminders, patient follow-ups, and automate post-treatment care instructions.',
+        icon: Activity,
+        secondaryIcon: MessageCircle,
+        color: 'text-cyan-500',
+        bgGradient: 'from-cyan-400/20 to-blue-600/20',
+        glowColor: 'shadow-cyan-500/50',
+        borderColor: 'border-cyan-500/30'
+    },
+    {
+        id: 'realestate',
+        label: language === 'TR' ? 'Emlak & Konut' : 'Real Estate',
+        description: language === 'TR'
+            ? 'Potansiyel müşterilere anında portföy sunumu yapın ve randevu takvimini yönetin.'
+            : 'Instantly present portfolios to new leads, qualify prospects, and manage viewing schedules automatically.',
+        icon: Building2,
+        secondaryIcon: BarChart3,
+        color: 'text-emerald-500',
+        bgGradient: 'from-emerald-400/20 to-green-600/20',
+        glowColor: 'shadow-emerald-500/50',
+        borderColor: 'border-emerald-500/30'
+    }
+];
 
+/**
+ * ⚡ PERFORMANCE OPTIMIZATION: Memoized IndustryShowcase component to prevent re-renders
+ * when the parent (LandingPage) state (like isAuthOpen) changes.
+ */
+const IndustryShowcase: React.FC<IndustryShowcaseProps> = React.memo(({ language, onAction }) => {
+    const industries = React.useMemo(() => getIndustries(language), [language]);
     const [activeTab, setActiveTab] = useState(industries[0]);
 
     return (
@@ -77,13 +85,13 @@ const IndustryShowcase: React.FC<IndustryShowcaseProps> = ({ language, onAction 
                     <div className="space-y-12 relative z-10">
                         <div>
                             <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-                                {content[language].headline} <br/>
+                                {SHOWCASE_CONTENT[language].headline} <br/>
                                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-zinc-500">
-                                    {content[language].headlineHighlight}
+                                    {SHOWCASE_CONTENT[language].headlineHighlight}
                                 </span>
                             </h2>
                             <p className="text-zinc-400 text-lg max-w-md leading-relaxed">
-                                {content[language].sub}
+                                {SHOWCASE_CONTENT[language].sub}
                             </p>
                         </div>
 
@@ -139,7 +147,7 @@ const IndustryShowcase: React.FC<IndustryShowcaseProps> = ({ language, onAction 
                                                             onClick={(e) => { e.stopPropagation(); onAction?.(); }}
                                                             className={cn("px-4 py-2 rounded-lg text-xs font-bold border transition-all", item.borderColor, item.color, "hover:bg-white hover:text-black")}
                                                           >
-                                                            {content[language].cta}
+                                                            {SHOWCASE_CONTENT[language].cta}
                                                           </button>
                                                         </div>
                                                     </motion.div>
@@ -190,6 +198,6 @@ const IndustryShowcase: React.FC<IndustryShowcaseProps> = ({ language, onAction 
             </div>
         </section>
     );
-};
+});
 
 export default IndustryShowcase;

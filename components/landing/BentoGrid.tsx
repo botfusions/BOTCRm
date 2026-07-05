@@ -5,23 +5,33 @@ interface BentoGridProps {
     language: 'TR' | 'EN';
 }
 
-const BentoGrid: React.FC<BentoGridProps> = ({ language }) => {
-  const titles = {
-      tech: language === 'TR' ? 'Teknolojik Üstünlük' : 'Tech Superiority',
-      sub: language === 'TR' ? 'Geleceğin altyapısı ile bugünden tanışın.' : 'Meet the infrastructure of the future today.',
-      webhook: language === 'TR' ? 'Webhook & n8n Entegrasyonu' : 'Webhook & n8n Integration',
-      webhookDesc: language === 'TR' 
-        ? 'Herhangi bir tetikleyici ile iş akışlarını bağlayın. Kod yazmadan API bağlantıları kurun.' 
-        : 'Connect workflows with any trigger. Build API connections without coding.',
-      rag: language === 'TR' ? 'RAG Mimarisi' : 'RAG Architecture',
-      ragDesc: language === 'TR' ? 'Verilerinizle konuşan akıllı vektör veritabanı.' : 'Smart vector database that talks to your data.',
-      mobile: language === 'TR' ? 'Mobil Uyumlu' : 'Mobile Ready',
-      mobileDesc: language === 'TR' ? 'Yönetim paneli her an cebinizde.' : 'Admin panel in your pocket anytime.',
-      security: language === 'TR' ? 'Kurumsal Güvenlik' : 'Enterprise Security',
-      securityDesc: language === 'TR' ? 'Uçtan uca şifreleme ve GDPR uyumluluğu.' : 'End-to-end encryption and GDPR compliance.',
-      scale: language === 'TR' ? 'Global Ölçek' : 'Global Scale',
-      scaleDesc: language === 'TR' ? 'Dünyanın her yerinden erişim.' : 'Access from anywhere in the world.'
-  };
+/**
+ * ⚡ PERFORMANCE OPTIMIZATION: Hoisted static content generator outside the component body
+ * to prevent redundant object creation on every render.
+ */
+const getTitles = (language: 'TR' | 'EN') => ({
+    tech: language === 'TR' ? 'Teknolojik Üstünlük' : 'Tech Superiority',
+    sub: language === 'TR' ? 'Geleceğin altyapısı ile bugünden tanışın.' : 'Meet the infrastructure of the future today.',
+    webhook: language === 'TR' ? 'Webhook & n8n Entegrasyonu' : 'Webhook & n8n Integration',
+    webhookDesc: language === 'TR'
+      ? 'Herhangi bir tetikleyici ile iş akışlarını bağlayın. Kod yazmadan API bağlantıları kurun.'
+      : 'Connect workflows with any trigger. Build API connections without coding.',
+    rag: language === 'TR' ? 'RAG Mimarisi' : 'RAG Architecture',
+    ragDesc: language === 'TR' ? 'Verilerinizle konuşan akıllı vektör veritabanı.' : 'Smart vector database that talks to your data.',
+    mobile: language === 'TR' ? 'Mobil Uyumlu' : 'Mobile Ready',
+    mobileDesc: language === 'TR' ? 'Yönetim paneli her an cebinizde.' : 'Admin panel in your pocket anytime.',
+    security: language === 'TR' ? 'Kurumsal Güvenlik' : 'Enterprise Security',
+    securityDesc: language === 'TR' ? 'Uçtan uca şifreleme ve GDPR uyumluluğu.' : 'End-to-end encryption and GDPR compliance.',
+    scale: language === 'TR' ? 'Global Ölçek' : 'Global Scale',
+    scaleDesc: language === 'TR' ? 'Dünyanın her yerinden erişim.' : 'Access from anywhere in the world.'
+});
+
+/**
+ * ⚡ PERFORMANCE OPTIMIZATION: Memoized BentoGrid component to prevent re-renders
+ * when the parent (LandingPage) state (like isAuthOpen) changes.
+ */
+const BentoGrid: React.FC<BentoGridProps> = React.memo(({ language }) => {
+  const titles = React.useMemo(() => getTitles(language), [language]);
 
   return (
     <section className="bg-[#030303] py-24 px-8 border-t border-white/5 relative z-20">
@@ -93,6 +103,6 @@ const BentoGrid: React.FC<BentoGridProps> = ({ language }) => {
       </div>
     </section>
   );
-};
+});
 
 export default BentoGrid;

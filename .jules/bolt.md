@@ -13,3 +13,7 @@
 ## 2026-06-02 - List Row Memoization and Lazy Loading
 **Learning:** In components with frequent state updates (like AI input or manual forms) alongside a large list, re-rendering the entire list on every keystroke causes significant performance degradation. Extracting list items into a `React.memo`'d component effectively isolates re-renders to only the changed inputs. Additionally, native `loading="lazy"` on images reduces initial asset overhead for long lists.
 **Action:** Extract and memoize list item components in views with interactive forms. Use stable callback props and native lazy loading for images in these components.
+
+## 2024-07-05 - Landing Page State Isolation and Component Memoization
+**Learning:** Toggling a simple top-level boolean state (like a modal visibility) can cause a full re-render of a complex landing page if event handlers are not stabilized. Stabilizing callbacks with `useCallback` and memoizing heavy sub-sections (`Hero`, `Grid`, `Pricing`) with `React.memo` ensures that UI feedback is near-instant without redundant execution of heavy motion animations. Hoisting large translation objects outside components also reduces GC pressure during these renders.
+**Action:** Always wrap top-level landing page sections in `React.memo` and stabilize their event handlers when introducing global UI state like modals or drawers.

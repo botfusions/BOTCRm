@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
     Search, MoreHorizontal, Phone, Mail, UserPlus, Trash2, X, Save, Eye, 
     Download, LayoutGrid, List, Loader2, Database, Terminal, Zap, ExternalLink 
@@ -11,6 +11,101 @@ interface ContactsProps {
     darkMode: boolean;
     language?: 'TR' | 'EN';
 }
+
+// ⚡ PERFORMANCE OPTIMIZATION: Extracting grid item to memoized component to prevent full list re-renders on search input
+const ContactCard = React.memo(({
+    contact,
+    darkMode,
+    bgCard,
+    textMain,
+    textSub,
+    isOpen,
+    onToggleMenu,
+    onSelect,
+    onDelete
+}: {
+    contact: Contact,
+    darkMode: boolean,
+    bgCard: string,
+    textMain: string,
+    textSub: string,
+    isOpen: boolean,
+    onToggleMenu: (id: string) => void,
+    onSelect: (contact: Contact) => void,
+    onDelete: (id: string) => void
+}) => (
+    <div className={`group relative rounded-[2.5rem] border transition-all duration-300 hover:shadow-2xl hover:scale-[1.01] overflow-hidden ${bgCard} hover:border-indigo-500/40`}>
+        <div className="h-28 bg-indigo-600 relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-indigo-700 to-indigo-500 opacity-90"></div>
+            <button
+                onClick={() => onToggleMenu(contact.id)}
+                className="absolute top-4 right-4 p-2 bg-black/10 text-white rounded-full hover:bg-black/20 backdrop-blur-md transition-colors"
+            >
+                <MoreHorizontal className="w-5 h-5" />
+            </button>
+            {isOpen && (
+                <div className={`absolute right-4 top-14 w-32 rounded-xl border shadow-xl z-30 overflow-hidden ${bgCard} animate-in fade-in slide-in-from-top-2`}>
+                    <button onClick={() => onSelect(contact)} className={`w-full text-left px-4 py-2.5 text-xs hover:bg-indigo-50 dark:hover:bg-indigo-900/30 flex items-center gap-2 ${textMain}`}><Eye className="w-3.5 h-3.5"/> Gör</button>
+                    <button onClick={() => onDelete(contact.id)} className="w-full text-left px-4 py-2.5 text-xs hover:bg-rose-50 dark:hover:bg-rose-900/20 text-rose-500 flex items-center gap-2 font-bold border-t border-slate-100 dark:border-slate-800"><Trash2 className="w-3.5 h-3.5"/> Sil</button>
+                </div>
+            )}
+        </div>
+        <div className="px-8 pb-10 -mt-12 relative z-10">
+            <div className="flex items-end gap-5 mb-6">
+                <img src={contact.avatarUrl} loading="lazy" className="w-24 h-24 rounded-3xl border-4 border-white dark:border-slate-900 shadow-2xl bg-slate-100" alt="" />
+                <div className="pb-1.5">
+                    <h3 className={`text-xl font-black tracking-tight leading-none ${textMain}`}>{contact.fullName}</h3>
+                    <p className="text-sm font-bold text-indigo-500 mt-1 uppercase tracking-widest">{contact.title || 'Müşteri'}</p>
+                </div>
+            </div>
+
+            <div className="space-y-4 mb-8">
+                <div className={`p-4 rounded-2xl border ${darkMode ? 'bg-slate-950 border-white/5' : 'bg-slate-50 border-slate-100'}`}>
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-1">E-POSTA</p>
+                    <p className={`text-sm font-bold truncate ${textMain}`}>{contact.email}</p>
+                </div>
+                <div className={`p-4 rounded-2xl border ${darkMode ? 'bg-slate-950 border-white/5' : 'bg-slate-50 border-slate-100'}`}>
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-1">TELEFON</p>
+                    <p className={`text-sm font-bold ${textMain}`}>{contact.phone}</p>
+                </div>
+            </div>
+
+            <div className="flex gap-3">
+                <button onClick={() => onSelect(contact)} className="flex-1 py-4 bg-indigo-600 text-white rounded-2xl text-[11px] font-black tracking-[0.15em] hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-600/20 uppercase">Mesaj Gönder</button>
+                <button onClick={() => onDelete(contact.id)} className={`p-4 rounded-2xl border ${bgCard} ${textSub} hover:border-rose-500/50 hover:text-rose-500 transition-all`}><Trash2 className="w-5 h-5"/></button>
+            </div>
+        </div>
+    </div>
+));
+
+// ⚡ PERFORMANCE OPTIMIZATION: Extracting table row to memoized component to isolate re-renders
+const ContactRow = React.memo(({
+    contact,
+    textMain,
+    onSelect
+}: {
+    contact: Contact,
+    textMain: string,
+    onSelect: (contact: Contact) => void
+}) => (
+    <tr className="hover:bg-indigo-500/5 transition-colors group">
+        <td className="p-5">
+            <div className="flex items-center gap-4">
+                <img src={contact.avatarUrl} loading="lazy" className="w-10 h-10 rounded-xl" />
+                <span className={`text-sm font-bold ${textMain}`}>{contact.fullName}</span>
+            </div>
+        </td>
+        <td className="p-5 text-sm text-slate-500 font-bold uppercase tracking-wide">{contact.title}</td>
+        <td className="p-5 text-sm text-slate-500 font-medium">{contact.email}</td>
+        <td className="p-5 text-sm text-slate-500 font-medium">{contact.phone}</td>
+        <td className="p-5">
+            <span className="px-3 py-1 rounded-lg bg-emerald-500/10 text-emerald-500 text-[10px] font-black border border-emerald-500/20">{contact.status}</span>
+        </td>
+        <td className="p-5 text-right">
+            <button onClick={() => onSelect(contact)} className="p-2 text-slate-400 hover:text-indigo-500 opacity-0 group-hover:opacity-100 transition-all"><ExternalLink className="w-4 h-4"/></button>
+        </td>
+    </tr>
+));
 
 const Contacts: React.FC<ContactsProps> = ({ darkMode, language = 'TR' }) => {
     const [contacts, setContacts] = useState<Contact[]>([]);
@@ -46,7 +141,7 @@ const Contacts: React.FC<ContactsProps> = ({ darkMode, language = 'TR' }) => {
         }
     };
 
-    const exportToCSV = () => {
+    const exportToCSV = useCallback(() => {
         const headers = ["Full Name", "Title", "Email", "Phone", "Status"];
         const rows = contacts.map(c => [c.fullName, c.title, c.email, c.phone, c.status]);
         const csvContent = "data:text/csv;charset=utf-8," 
@@ -60,9 +155,10 @@ const Contacts: React.FC<ContactsProps> = ({ darkMode, language = 'TR' }) => {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-    };
+    }, [contacts]);
 
-    const handleDelete = async (id: string) => {
+    // ⚡ PERFORMANCE OPTIMIZATION: Stabilizing event handlers to prevent child re-renders
+    const handleDelete = useCallback(async (id: string) => {
         if (window.confirm(language === 'TR' ? 'Bu kişiyi silmek istediğinize emin misiniz?' : 'Are you sure you want to delete this contact?')) {
             const success = await deleteContact(id);
             if (success) {
@@ -70,7 +166,16 @@ const Contacts: React.FC<ContactsProps> = ({ darkMode, language = 'TR' }) => {
                 setOpenMenuId(null);
             }
         }
-    };
+    }, [language, setContacts, setOpenMenuId]);
+
+    const handleSelect = useCallback((contact: Contact) => {
+        setSelectedContact(contact);
+        setOpenMenuId(null);
+    }, [setSelectedContact, setOpenMenuId]);
+
+    const toggleMenu = useCallback((id: string) => {
+        setOpenMenuId(prev => prev === id ? null : id);
+    }, [setOpenMenuId]);
 
     const handleAddSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -173,48 +278,18 @@ const Contacts: React.FC<ContactsProps> = ({ darkMode, language = 'TR' }) => {
                 ) : viewType === 'grid' ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
                         {filteredContacts.map(contact => (
-                            <div key={contact.id} className={`group relative rounded-[2.5rem] border transition-all duration-300 hover:shadow-2xl hover:scale-[1.01] overflow-hidden ${bgCard} hover:border-indigo-500/40`}>
-                                <div className="h-28 bg-indigo-600 relative overflow-hidden">
-                                    <div className="absolute inset-0 bg-gradient-to-r from-indigo-700 to-indigo-500 opacity-90"></div>
-                                    <button 
-                                        onClick={() => setOpenMenuId(openMenuId === contact.id ? null : contact.id)}
-                                        className="absolute top-4 right-4 p-2 bg-black/10 text-white rounded-full hover:bg-black/20 backdrop-blur-md transition-colors"
-                                    >
-                                        <MoreHorizontal className="w-5 h-5" />
-                                    </button>
-                                    {openMenuId === contact.id && (
-                                        <div className={`absolute right-4 top-14 w-32 rounded-xl border shadow-xl z-30 overflow-hidden ${bgCard} animate-in fade-in slide-in-from-top-2`}>
-                                            <button onClick={() => {setSelectedContact(contact); setOpenMenuId(null);}} className={`w-full text-left px-4 py-2.5 text-xs hover:bg-indigo-50 dark:hover:bg-indigo-900/30 flex items-center gap-2 ${textMain}`}><Eye className="w-3.5 h-3.5"/> Gör</button>
-                                            <button onClick={() => handleDelete(contact.id)} className="w-full text-left px-4 py-2.5 text-xs hover:bg-rose-50 dark:hover:bg-rose-900/20 text-rose-500 flex items-center gap-2 font-bold border-t border-slate-100 dark:border-slate-800"><Trash2 className="w-3.5 h-3.5"/> Sil</button>
-                                        </div>
-                                    )}
-                                </div>
-                                <div className="px-8 pb-10 -mt-12 relative z-10">
-                                    <div className="flex items-end gap-5 mb-6">
-                                        <img src={contact.avatarUrl} className="w-24 h-24 rounded-3xl border-4 border-white dark:border-slate-900 shadow-2xl bg-slate-100" alt="" />
-                                        <div className="pb-1.5">
-                                            <h3 className={`text-xl font-black tracking-tight leading-none ${textMain}`}>{contact.fullName}</h3>
-                                            <p className="text-sm font-bold text-indigo-500 mt-1 uppercase tracking-widest">{contact.title || 'Müşteri'}</p>
-                                        </div>
-                                    </div>
-                                    
-                                    <div className="space-y-4 mb-8">
-                                        <div className={`p-4 rounded-2xl border ${darkMode ? 'bg-slate-950 border-white/5' : 'bg-slate-50 border-slate-100'}`}>
-                                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-1">E-POSTA</p>
-                                            <p className={`text-sm font-bold truncate ${textMain}`}>{contact.email}</p>
-                                        </div>
-                                        <div className={`p-4 rounded-2xl border ${darkMode ? 'bg-slate-950 border-white/5' : 'bg-slate-50 border-slate-100'}`}>
-                                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-1">TELEFON</p>
-                                            <p className={`text-sm font-bold ${textMain}`}>{contact.phone}</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex gap-3">
-                                        <button onClick={() => setSelectedContact(contact)} className="flex-1 py-4 bg-indigo-600 text-white rounded-2xl text-[11px] font-black tracking-[0.15em] hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-600/20 uppercase">Mesaj Gönder</button>
-                                        <button onClick={() => handleDelete(contact.id)} className={`p-4 rounded-2xl border ${bgCard} ${textSub} hover:border-rose-500/50 hover:text-rose-500 transition-all`}><Trash2 className="w-5 h-5"/></button>
-                                    </div>
-                                </div>
-                            </div>
+                            <ContactCard
+                                key={contact.id}
+                                contact={contact}
+                                darkMode={darkMode}
+                                bgCard={bgCard}
+                                textMain={textMain}
+                                textSub={textSub}
+                                isOpen={openMenuId === contact.id}
+                                onToggleMenu={toggleMenu}
+                                onSelect={handleSelect}
+                                onDelete={handleDelete}
+                            />
                         ))}
                     </div>
                 ) : (
@@ -232,23 +307,12 @@ const Contacts: React.FC<ContactsProps> = ({ darkMode, language = 'TR' }) => {
                             </thead>
                             <tbody className={`divide-y ${darkMode ? 'divide-slate-800' : 'divide-slate-100'}`}>
                                 {filteredContacts.map(c => (
-                                    <tr key={c.id} className="hover:bg-indigo-500/5 transition-colors group">
-                                        <td className="p-5">
-                                            <div className="flex items-center gap-4">
-                                                <img src={c.avatarUrl} className="w-10 h-10 rounded-xl" />
-                                                <span className={`text-sm font-bold ${textMain}`}>{c.fullName}</span>
-                                            </div>
-                                        </td>
-                                        <td className="p-5 text-sm text-slate-500 font-bold uppercase tracking-wide">{c.title}</td>
-                                        <td className="p-5 text-sm text-slate-500 font-medium">{c.email}</td>
-                                        <td className="p-5 text-sm text-slate-500 font-medium">{c.phone}</td>
-                                        <td className="p-5">
-                                            <span className="px-3 py-1 rounded-lg bg-emerald-500/10 text-emerald-500 text-[10px] font-black border border-emerald-500/20">{c.status}</span>
-                                        </td>
-                                        <td className="p-5 text-right">
-                                            <button onClick={() => setSelectedContact(c)} className="p-2 text-slate-400 hover:text-indigo-500 opacity-0 group-hover:opacity-100 transition-all"><ExternalLink className="w-4 h-4"/></button>
-                                        </td>
-                                    </tr>
+                                    <ContactRow
+                                        key={c.id}
+                                        contact={c}
+                                        textMain={textMain}
+                                        onSelect={handleSelect}
+                                    />
                                 ))}
                             </tbody>
                         </table>

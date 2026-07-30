@@ -9,9 +9,11 @@ interface PricingProps {
   onLogin?: () => void;
 }
 
-const Pricing: React.FC<PricingProps> = ({ language, onAction, onLogin }) => {
-  
-  const content = {
+/**
+ * ⚡ PERFORMANCE OPTIMIZATION: Hoisted static content outside the component body
+ * to prevent re-allocation on every render.
+ */
+const PRICING_CONTENT = {
     EN: {
       title: "Simple, Transparent Pricing",
       subtitle: "Start your automated journey today. No hidden fees.",
@@ -74,9 +76,14 @@ const Pricing: React.FC<PricingProps> = ({ language, onAction, onLogin }) => {
       footerCta: "Zaten bir hesabınız var mı?",
       loginBtn: "Buradan giriş yapın"
     }
-  };
+};
 
-  const txt = content[language];
+/**
+ * ⚡ PERFORMANCE OPTIMIZATION: Memoized Pricing component to prevent re-renders
+ * when the parent (LandingPage) state (like isAuthOpen) changes.
+ */
+const Pricing: React.FC<PricingProps> = React.memo(({ language, onAction, onLogin }) => {
+  const txt = PRICING_CONTENT[language];
 
   return (
     <section className="bg-[#030303] py-24 px-6 relative overflow-hidden border-t border-white/5">
@@ -213,6 +220,6 @@ const Pricing: React.FC<PricingProps> = ({ language, onAction, onLogin }) => {
       </div>
     </section>
   );
-};
+});
 
 export default Pricing;

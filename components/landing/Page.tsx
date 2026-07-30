@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import Hero from './Hero';
 import IndustryShowcase from './IndustryShowcase';
 import BentoGrid from './BentoGrid';
@@ -14,7 +14,11 @@ interface LandingPageProps {
   setLanguage: (lang: 'TR' | 'EN') => void;
 }
 
-const BrandLogo = () => {
+/**
+ * ⚡ PERFORMANCE OPTIMIZATION: Memoized BrandLogo to prevent redundant re-renders
+ * as it contains static content and image assets.
+ */
+const BrandLogo = React.memo(() => {
   const LOGO_URL = "https://qlcbobvbircjhlglhfhr.supabase.co/storage/v1/object/public/image/cmr%20logo.png";
 
   return (
@@ -37,7 +41,7 @@ const BrandLogo = () => {
       </div>
     </div>
   );
-};
+});
 
 const LandingPage: React.FC<LandingPageProps> = ({ onLogin, language, setLanguage }) => {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
@@ -46,21 +50,27 @@ const LandingPage: React.FC<LandingPageProps> = ({ onLogin, language, setLanguag
     document.documentElement.classList.add('dark');
   }, []);
 
-  const openAuth = () => setIsAuthOpen(true);
+  /**
+   * ⚡ PERFORMANCE OPTIMIZATION: Stabilized callback handlers with useCallback
+   * to prevent re-renders of memoized child components when isAuthOpen state changes.
+   */
+  const openAuth = useCallback(() => setIsAuthOpen(true), []);
 
-  const scrollToContact = () => {
+  const scrollToContact = useCallback(() => {
     const element = document.getElementById('contact-form');
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-  };
+  }, []);
+
+  const handleCloseAuth = useCallback(() => setIsAuthOpen(false), []);
 
   return (
     <div className="min-h-screen bg-[#030303] font-sans selection:bg-rose-500/30 selection:text-rose-500">
       
       <AuthForm 
         isOpen={isAuthOpen} 
-        onClose={() => setIsAuthOpen(false)} 
+        onClose={handleCloseAuth}
         onSuccess={onLogin} 
         language={language} 
       />

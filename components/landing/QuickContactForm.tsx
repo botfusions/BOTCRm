@@ -10,12 +10,11 @@ interface QuickContactFormProps {
   id?: string;
 }
 
-const QuickContactForm: React.FC<QuickContactFormProps> = ({ language, id }) => {
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [formData, setFormData] = useState({ fullName: '', email: '', phone: '' });
-
-  const t = {
+/**
+ * ⚡ PERFORMANCE OPTIMIZATION: Hoisted static content outside the component body
+ * to prevent re-allocation on every render.
+ */
+const FORM_CONTENT = {
     TR: {
       title: "Hemen Başlayalım",
       subtitle: "Bilgilerinizi bırakın, botlarınızı birlikte tasarlayalım.",
@@ -34,7 +33,18 @@ const QuickContactForm: React.FC<QuickContactFormProps> = ({ language, id }) => 
       btn: "Submit and Start",
       success: "Message received! Our team will contact you shortly."
     }
-  }[language];
+};
+
+/**
+ * ⚡ PERFORMANCE OPTIMIZATION: Memoized QuickContactForm component to prevent re-renders
+ * when the parent (LandingPage) state (like isAuthOpen) changes.
+ */
+const QuickContactForm: React.FC<QuickContactFormProps> = React.memo(({ language, id }) => {
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [formData, setFormData] = useState({ fullName: '', email: '', phone: '' });
+
+  const t = FORM_CONTENT[language];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -151,6 +161,6 @@ const QuickContactForm: React.FC<QuickContactFormProps> = ({ language, id }) => 
       </div>
     </section>
   );
-};
+});
 
 export default QuickContactForm;

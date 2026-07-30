@@ -17,3 +17,7 @@
 ## 2024-06-05 - Company List Memoization and Style Stabilization
 **Learning:** In list-heavy views like 'Companies', memoizing individual item components (`CompanyCard`, `CompanyRow`) combined with stabilizing style-related strings and icons via `useMemo` effectively isolates re-renders during rapid state changes like search filtering. This prevents the entire list from re-rendering on every keystroke, significantly improving input responsiveness.
 **Action:** Extract list items into `React.memo` components and ensure all props passed to them (styles, callbacks) are referentially stable using `useMemo` and `useCallback`.
+
+## 2024-07-05 - Landing Page State Isolation and Component Memoization
+**Learning:** Toggling a simple top-level boolean state (like a modal visibility) can cause a full re-render of a complex landing page if event handlers are not stabilized. Stabilizing callbacks with `useCallback` and memoizing heavy sub-sections (`Hero`, `Grid`, `Pricing`) with `React.memo` ensures that UI feedback is near-instant without redundant execution of heavy motion animations. Hoisting large translation objects outside components also reduces GC pressure during these renders.
+**Action:** Always wrap top-level landing page sections in `React.memo` and stabilize their event handlers when introducing global UI state like modals or drawers.

@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Lead, LeadStatus, Source } from '../types';
 import { fetchLeads, createLead } from '../services/leadService';
 import { 
@@ -44,16 +43,28 @@ const LeadRow: React.FC<{
   </tr>
 ));
 
-const Leads: React.FC<LeadsProps> = ({ darkMode, language = 'TR' }) => {
-  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
-  const [leads, setLeads] = useState<Lead[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [errorType, setErrorType] = useState<string | null>(null);
-  const [parsing, setParsing] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+LeadRow.displayName = 'LeadRow';
+
+/**
+ * ⚡ PERFORMANCE OPTIMIZATION: Standalone memoized AICapturePanel component.
+ * Isolates state changes of the AI analysis raw text input and the quick save form input
+ * fields, preventing full Lead List re-renders on every keystroke.
+ */
+interface AICapturePanelProps {
+  darkMode: boolean;
+  language: 'TR' | 'EN';
+  onLeadCreated: (lead: Lead) => void;
+  onDuplicateError: () => void;
+}
+
+const AICapturePanel: React.FC<AICapturePanelProps> = React.memo(({
+  darkMode,
+  language,
+  onLeadCreated,
+  onDuplicateError
+}) => {
   const [rawText, setRawText] = useState('');
-  const [duplicateError, setDuplicateError] = useState(false);
-  
+  const [parsing, setParsing] = useState(false);
   const [newLead, setNewLead] = useState({
     fullName: '',
     email: '',
@@ -62,29 +73,9 @@ const Leads: React.FC<LeadsProps> = ({ darkMode, language = 'TR' }) => {
     source: Source.MANUAL
   });
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    setLoading(true);
-    setErrorType(null);
-    try {
-      const data = await fetchLeads();
-      setLeads(data);
-    } catch (err: any) {
-      if (err.message === 'TABLE_NOT_FOUND') {
-        setErrorType('TABLE_NOT_FOUND');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const parseWithAI = async () => {
     if (!rawText.trim()) return;
     setParsing(true);
-    setDuplicateError(false);
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const response = await ai.models.generateContent({
@@ -123,34 +114,228 @@ const Leads: React.FC<LeadsProps> = ({ darkMode, language = 'TR' }) => {
 
   const handleQuickSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    setDuplicateError(false);
-
     if (!newLead.fullName || !newLead.email || !newLead.phone) {
-        alert(language === 'TR' ? 'Lütfen en az Ad, E-posta ve Telefon bilgilerini doldurun.' : 'Please fill in Name, Email and Phone fields.');
-        return;
+      alert(language === 'TR' ? 'Lütfen en az Ad, E-posta ve Telefon bilgilerini doldurun.' : 'Please fill in Name, Email and Phone fields.');
+      return;
     }
 
     try {
-        const savedLead = await createLead({
-          ...newLead,
-          status: LeadStatus.NEW,
-          tags: ['BOTSCRm-MANUAL'],
-          lastActivity: new Date().toISOString(),
-          avatarUrl: `https://ui-avatars.com/api/?name=${newLead.fullName}&background=6366f1&color=fff`
-        });
+      const savedLead = await createLead({
+        ...newLead,
+        status: LeadStatus.NEW,
+        tags: ['BOTSCRm-MANUAL'],
+        lastActivity: new Date().toISOString(),
+        avatarUrl: `https://ui-avatars.com/api/?name=${newLead.fullName}&background=6366f1&color=fff`
+      });
 
-        if (savedLead) {
-          setLeads(prev => [savedLead, ...prev]);
-          setNewLead({ fullName: '', email: '', phone: '', value: 0, source: Source.MANUAL });
-          setIsModalOpen(false);
-        }
+      if (savedLead) {
+        onLeadCreated(savedLead);
+        setNewLead({ fullName: '', email: '', phone: '', value: 0, source: Source.MANUAL });
+      }
     } catch (error: any) {
-        if (error.message === 'DUPLICATE_RECORD') {
-            setDuplicateError(true);
-            setTimeout(() => setDuplicateError(false), 5000);
-        }
+      if (error.message === 'DUPLICATE_RECORD') {
+        onDuplicateError();
+      }
     }
   };
+
+  const bgCard = darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200';
+
+  return (
+    <div className={`shrink-0 p-6 rounded-3xl border-t-4 border-t-indigo-600 shadow-2xl ${bgCard} relative overflow-hidden`}>
+      <div className="absolute top-0 right-0 p-1 opacity-5"><Zap className="w-32 h-32 text-indigo-500" /></div>
+      <div className="flex flex-col lg:flex-row gap-6">
+        <div className="flex-1 space-y-2">
+          <div className="flex items-center gap-2 mb-1">
+            <Wand2 className="w-4 h-4 text-indigo-500" />
+            <label className={`text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500`}>AI Metin Analiz Motoru</label>
+          </div>
+          <div className="relative">
+            <textarea
+              value={rawText}
+              onChange={(e) => setRawText(e.target.value)}
+              className={`w-full h-24 p-4 rounded-2xl border text-sm outline-none transition-all ${darkMode ? 'bg-slate-950 border-slate-800 text-white focus:border-indigo-500' : 'bg-slate-50 border-slate-200 focus:border-indigo-500'}`}
+              placeholder="Müşteri mesajını buraya yapıştırın, AI bilgileri ayıklasın..."
+            />
+            <button onClick={parseWithAI} disabled={parsing || !rawText.trim()} className="absolute bottom-3 right-3 px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-[10px] font-black shadow-lg hover:bg-indigo-700 disabled:opacity-50 transition-all uppercase tracking-widest">
+              {parsing ? <Loader2 className="w-4 h-4 animate-spin" /> : "Analiz Et"}
+            </button>
+          </div>
+        </div>
+        <div className="flex-[1.5]">
+          <form onSubmit={handleQuickSave} className="grid grid-cols-2 md:grid-cols-4 gap-4 items-end h-full">
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Tam Adı</label>
+              <input required value={newLead.fullName} onChange={e => setNewLead({...newLead, fullName: e.target.value})} className={`w-full px-4 py-3 rounded-xl border text-sm font-bold ${darkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-200'}`} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">E-Posta</label>
+              <input required type="email" value={newLead.email} onChange={e => setNewLead({...newLead, email: e.target.value})} className={`w-full px-4 py-3 rounded-xl border text-sm font-bold ${darkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-200'}`} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Telefon</label>
+              <input required value={newLead.phone} onChange={e => setNewLead({...newLead, phone: e.target.value})} className={`w-full px-4 py-3 rounded-xl border text-sm font-bold ${darkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-200'}`} />
+            </div>
+            <button type="submit" className="px-6 py-3 bg-emerald-600 text-white rounded-xl text-[10px] font-black tracking-widest hover:bg-emerald-700 shadow-xl shadow-emerald-600/20 transition-all uppercase">
+              Supabase Kaydet
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+AICapturePanel.displayName = 'AICapturePanel';
+
+/**
+ * ⚡ PERFORMANCE OPTIMIZATION: Standalone memoized AddLeadModal component.
+ * Isolates form input and keystroke updates inside the creation modal, avoiding full
+ * list rendering during lead details input.
+ */
+interface AddLeadModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  darkMode: boolean;
+  language: 'TR' | 'EN';
+  duplicateError: boolean;
+  onLeadCreated: (lead: Lead) => void;
+  onDuplicateError: () => void;
+}
+
+const AddLeadModal: React.FC<AddLeadModalProps> = React.memo(({
+  isOpen,
+  onClose,
+  darkMode,
+  language,
+  duplicateError,
+  onLeadCreated,
+  onDuplicateError
+}) => {
+  const [newLead, setNewLead] = useState({
+    fullName: '',
+    email: '',
+    phone: '',
+    value: 0,
+    source: Source.MANUAL
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newLead.fullName || !newLead.email || !newLead.phone) {
+      alert(language === 'TR' ? 'Lütfen en az Ad, E-posta ve Telefon bilgilerini doldurun.' : 'Please fill in Name, Email and Phone fields.');
+      return;
+    }
+
+    try {
+      const savedLead = await createLead({
+        ...newLead,
+        status: LeadStatus.NEW,
+        tags: ['BOTSCRm-MANUAL'],
+        lastActivity: new Date().toISOString(),
+        avatarUrl: `https://ui-avatars.com/api/?name=${newLead.fullName}&background=6366f1&color=fff`
+      });
+
+      if (savedLead) {
+        onLeadCreated(savedLead);
+        setNewLead({ fullName: '', email: '', phone: '', value: 0, source: Source.MANUAL });
+        onClose();
+      }
+    } catch (error: any) {
+      if (error.message === 'DUPLICATE_RECORD') {
+        onDuplicateError();
+      }
+    }
+  };
+
+  if (!isOpen) return null;
+
+  const bgCard = darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200';
+  const textMain = darkMode ? 'text-white' : 'text-slate-900';
+  const textSub = darkMode ? 'text-slate-400' : 'text-slate-500';
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-300">
+      <div className={`w-full max-w-lg rounded-[3rem] border shadow-2xl p-10 ${bgCard}`}>
+        <div className="flex justify-between items-center mb-8">
+          <h2 className={`text-xl font-black uppercase tracking-widest ${textMain}`}>Yeni Kayıt</h2>
+          <button onClick={onClose} className={textSub}><X className="w-7 h-7" /></button>
+        </div>
+        {duplicateError && (
+          <div className="mb-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs font-bold text-amber-500 animate-pulse">
+            Bu e-posta zaten kullanımda!
+          </div>
+        )}
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Müşteri İsmi</label>
+            <input required placeholder="Ad Soyad" value={newLead.fullName} onChange={e => setNewLead({...newLead, fullName: e.target.value})} className={`w-full px-6 py-4 rounded-2xl border text-sm font-bold outline-none focus:border-indigo-500 transition-all ${darkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-200'}`} />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">E-Posta</label>
+              <input required type="email" placeholder="mail@domain.com" value={newLead.email} onChange={e => setNewLead({...newLead, email: e.target.value})} className={`w-full px-6 py-4 rounded-2xl border text-sm font-bold outline-none focus:border-indigo-500 transition-all ${darkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-200'}`} />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Telefon</label>
+              <input required placeholder="+90" value={newLead.phone} onChange={e => setNewLead({...newLead, phone: e.target.value})} className={`w-full px-6 py-4 rounded-2xl border text-sm font-bold outline-none focus:border-indigo-500 transition-all ${darkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-200'}`} />
+            </div>
+          </div>
+          <button type="submit" className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black text-xs tracking-[0.2em] shadow-2xl shadow-indigo-600/30 hover:bg-indigo-700 transition-all uppercase">
+            Veritabanına İşle
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+});
+
+AddLeadModal.displayName = 'AddLeadModal';
+
+const Leads: React.FC<LeadsProps> = ({ darkMode, language = 'TR' }) => {
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [errorType, setErrorType] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [duplicateError, setDuplicateError] = useState(false);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    setLoading(true);
+    setErrorType(null);
+    try {
+      const data = await fetchLeads();
+      setLeads(data);
+    } catch (err: any) {
+      if (err.message === 'TABLE_NOT_FOUND') {
+        setErrorType('TABLE_NOT_FOUND');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /**
+   * ⚡ PERFORMANCE OPTIMIZATION: Memoize callback handlers using useCallback to maintain referential stability.
+   * This ensures that child components (AICapturePanel, AddLeadModal) do not re-render unnecessarily.
+   */
+  const handleLeadCreated = useCallback((savedLead: Lead) => {
+    setLeads(prev => [savedLead, ...prev]);
+    setIsModalOpen(false);
+  }, []);
+
+  const handleDuplicateError = useCallback(() => {
+    setDuplicateError(true);
+    setTimeout(() => setDuplicateError(false), 5000);
+  }, []);
+
+  const handleCloseModal = useCallback(() => {
+    setIsModalOpen(false);
+  }, []);
 
   const bgCard = darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200';
   const textMain = darkMode ? 'text-white' : 'text-slate-900';
@@ -237,82 +422,23 @@ const Leads: React.FC<LeadsProps> = ({ darkMode, language = 'TR' }) => {
         </div>
 
         {/* AI CAPTURE PANEL */}
-        <div className={`shrink-0 p-6 rounded-3xl border-t-4 border-t-indigo-600 shadow-2xl ${bgCard} relative overflow-hidden`}>
-            <div className="absolute top-0 right-0 p-1 opacity-5"><Zap className="w-32 h-32 text-indigo-500" /></div>
-            <div className="flex flex-col lg:flex-row gap-6">
-                <div className="flex-1 space-y-2">
-                    <div className="flex items-center gap-2 mb-1">
-                        <Wand2 className="w-4 h-4 text-indigo-500" />
-                        <label className={`text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500`}>AI Metin Analiz Motoru</label>
-                    </div>
-                    <div className="relative">
-                        <textarea 
-                            value={rawText}
-                            onChange={(e) => setRawText(e.target.value)}
-                            className={`w-full h-24 p-4 rounded-2xl border text-sm outline-none transition-all ${darkMode ? 'bg-slate-950 border-slate-800 text-white focus:border-indigo-500' : 'bg-slate-50 border-slate-200 focus:border-indigo-500'}`}
-                            placeholder="Müşteri mesajını buraya yapıştırın, AI bilgileri ayıklasın..."
-                        />
-                        <button onClick={parseWithAI} disabled={parsing || !rawText.trim()} className="absolute bottom-3 right-3 px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-[10px] font-black shadow-lg hover:bg-indigo-700 disabled:opacity-50 transition-all uppercase tracking-widest">
-                            {parsing ? <Loader2 className="w-4 h-4 animate-spin" /> : "Analiz Et"}
-                        </button>
-                    </div>
-                </div>
-                <div className="flex-[1.5]">
-                    <form onSubmit={handleQuickSave} className="grid grid-cols-2 md:grid-cols-4 gap-4 items-end h-full">
-                        <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Tam Adı</label>
-                            <input required value={newLead.fullName} onChange={e => setNewLead({...newLead, fullName: e.target.value})} className={`w-full px-4 py-3 rounded-xl border text-sm font-bold ${darkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-200'}`} />
-                        </div>
-                        <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">E-Posta</label>
-                            <input required type="email" value={newLead.email} onChange={e => setNewLead({...newLead, email: e.target.value})} className={`w-full px-4 py-3 rounded-xl border text-sm font-bold ${darkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-200'}`} />
-                        </div>
-                        <div className="space-y-1">
-                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Telefon</label>
-                            <input required value={newLead.phone} onChange={e => setNewLead({...newLead, phone: e.target.value})} className={`w-full px-4 py-3 rounded-xl border text-sm font-bold ${darkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-200'}`} />
-                        </div>
-                        <button type="submit" className="px-6 py-3 bg-emerald-600 text-white rounded-xl text-[10px] font-black tracking-widest hover:bg-emerald-700 shadow-xl shadow-emerald-600/20 transition-all uppercase">
-                            Supabase Kaydet
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
+        <AICapturePanel
+          darkMode={darkMode}
+          language={language}
+          onLeadCreated={handleLeadCreated}
+          onDuplicateError={handleDuplicateError}
+        />
 
-        {isModalOpen && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-300">
-                <div className={`w-full max-w-lg rounded-[3rem] border shadow-2xl p-10 ${bgCard}`}>
-                    <div className="flex justify-between items-center mb-8">
-                        <h2 className={`text-xl font-black uppercase tracking-widest ${textMain}`}>Yeni Kayıt</h2>
-                        <button onClick={() => setIsModalOpen(false)} className={textSub}><X className="w-7 h-7" /></button>
-                    </div>
-                    {duplicateError && (
-                        <div className="mb-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs font-bold text-amber-500">
-                            Bu e-posta zaten kullanımda!
-                        </div>
-                    )}
-                    <form onSubmit={handleQuickSave} className="space-y-5">
-                        <div className="space-y-1.5">
-                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Müşteri İsmi</label>
-                            <input required placeholder="Ad Soyad" value={newLead.fullName} onChange={e => setNewLead({...newLead, fullName: e.target.value})} className={`w-full px-6 py-4 rounded-2xl border text-sm font-bold outline-none focus:border-indigo-500 transition-all ${darkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-200'}`} />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-1.5">
-                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">E-Posta</label>
-                                <input required type="email" placeholder="mail@domain.com" value={newLead.email} onChange={e => setNewLead({...newLead, email: e.target.value})} className={`w-full px-6 py-4 rounded-2xl border text-sm font-bold outline-none focus:border-indigo-500 transition-all ${darkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-200'}`} />
-                            </div>
-                            <div className="space-y-1.5">
-                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Telefon</label>
-                                <input required placeholder="+90" value={newLead.phone} onChange={e => setNewLead({...newLead, phone: e.target.value})} className={`w-full px-6 py-4 rounded-2xl border text-sm font-bold outline-none focus:border-indigo-500 transition-all ${darkMode ? 'bg-slate-950 border-slate-800 text-white' : 'bg-slate-50 border-slate-200'}`} />
-                            </div>
-                        </div>
-                        <button type="submit" className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black text-xs tracking-[0.2em] shadow-2xl shadow-indigo-600/30 hover:bg-indigo-700 transition-all uppercase">
-                            Veritabanına İşle
-                        </button>
-                    </form>
-                </div>
-            </div>
-        )}
+        {/* ADD LEAD MODAL */}
+        <AddLeadModal
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          darkMode={darkMode}
+          language={language}
+          duplicateError={duplicateError}
+          onLeadCreated={handleLeadCreated}
+          onDuplicateError={handleDuplicateError}
+        />
     </div>
   );
 };

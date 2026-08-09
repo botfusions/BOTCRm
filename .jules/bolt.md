@@ -21,3 +21,7 @@
 ## 2024-07-05 - Landing Page State Isolation and Component Memoization
 **Learning:** Toggling a simple top-level boolean state (like a modal visibility) can cause a full re-render of a complex landing page if event handlers are not stabilized. Stabilizing callbacks with `useCallback` and memoizing heavy sub-sections (`Hero`, `Grid`, `Pricing`) with `React.memo` ensures that UI feedback is near-instant without redundant execution of heavy motion animations. Hoisting large translation objects outside components also reduces GC pressure during these renders.
 **Action:** Always wrap top-level landing page sections in `React.memo` and stabilize their event handlers when introducing global UI state like modals or drawers.
+
+## 2026-06-06 - Component Memoization and Static Hoisting in Deal Details
+**Learning:** In detailed dashboard views (like 'OpportunityDetails'), hardcoding multiple identical list-like structures and declaring config arrays locally causes massive GC churn and redundant DOM reconstruction. Extracting repetitive markup into a `React.memo`'d component, hoisting arrays, and wrapping the main component itself in `React.memo` isolates updates and avoids unnecessary re-renders when parent states change.
+**Action:** Always identify repeating JSX templates, extract them to memoized sub-components, hoist invariant arrays outside of render scopes, and memoize detailed view panels.

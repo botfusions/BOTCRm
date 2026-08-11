@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
     User, 
     LogOut, 
@@ -77,9 +77,13 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, language = 'TR', onLogout
     }
   };
 
-  const handleChange = (field: keyof BOTS_Settings, value: string) => {
+  /**
+   * ⚡ PERFORMANCE OPTIMIZATION: Stabilized handleChange with useCallback
+   * to maintain referential stability and prevent re-rendering the outer structure.
+   */
+  const handleChange = useCallback((field: keyof BOTS_Settings, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-  };
+  }, []);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -92,11 +96,29 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, language = 'TR', onLogout
     setIsSaving(false);
   };
 
+  /**
+   * ⚡ PERFORMANCE OPTIMIZATION: Stabilized handleTabChange with useCallback
+   * to ensure stable function references are passed to memoized NavButtons.
+   */
+  const handleTabChange = useCallback((tab: SettingsTab) => {
+    setActiveTab(tab);
+  }, []);
+
   const bgCard = darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200';
   const textMain = darkMode ? 'text-white' : 'text-slate-900';
   const textSub = darkMode ? 'text-slate-400' : 'text-slate-500';
-  const inputClass = `w-full px-4 py-3 rounded-xl border text-sm transition-all outline-none focus:ring-4 focus:ring-indigo-500/10 ${darkMode ? 'bg-slate-950 border-slate-800 text-white focus:border-indigo-500' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-indigo-500'}`;
-  const labelClass = `text-[10px] font-black uppercase tracking-[0.15em] mb-2 block ${darkMode ? 'text-slate-500' : 'text-slate-400'}`;
+
+  /**
+   * ⚡ PERFORMANCE OPTIMIZATION: Memoized CSS class strings with useMemo
+   * to avoid string reconstruction and GC overhead during keystroke-based state changes.
+   */
+  const inputClass = useMemo(() => {
+    return `w-full px-4 py-3 rounded-xl border text-sm transition-all outline-none focus:ring-4 focus:ring-indigo-500/10 ${darkMode ? 'bg-slate-950 border-slate-800 text-white focus:border-indigo-500' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-indigo-500'}`;
+  }, [darkMode]);
+
+  const labelClass = useMemo(() => {
+    return `text-[10px] font-black uppercase tracking-[0.15em] mb-2 block ${darkMode ? 'text-slate-500' : 'text-slate-400'}`;
+  }, [darkMode]);
 
   const renderContent = () => {
     if (loading) return <div className="h-64 flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-indigo-600" /></div>;
@@ -223,10 +245,10 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, language = 'TR', onLogout
       </header>
       <div className="flex-1 flex overflow-hidden">
           <aside className={`w-72 shrink-0 border-r p-8 space-y-3 ${darkMode ? 'border-slate-800 bg-slate-900/30' : 'border-slate-200 bg-slate-50/50'}`}>
-              <NavButton active={activeTab === 'general'} onClick={() => setActiveTab('general')} icon={User} label="Profil" darkMode={darkMode} />
-              <NavButton active={activeTab === 'integrations'} onClick={() => setActiveTab('integrations')} icon={Globe} label="API / Supabase" darkMode={darkMode} />
-              <NavButton active={activeTab === 'automation'} onClick={() => setActiveTab('automation')} icon={Zap} label="n8n Otomasyon" darkMode={darkMode} />
-              <NavButton active={activeTab === 'communication'} onClick={() => setActiveTab('communication')} icon={MessageSquare} label="Mesajlaşma" darkMode={darkMode} />
+              <NavButton active={activeTab === 'general'} tabId="general" onClick={handleTabChange} icon={User} label="Profil" darkMode={darkMode} />
+              <NavButton active={activeTab === 'integrations'} tabId="integrations" onClick={handleTabChange} icon={Globe} label="API / Supabase" darkMode={darkMode} />
+              <NavButton active={activeTab === 'automation'} tabId="automation" onClick={handleTabChange} icon={Zap} label="n8n Otomasyon" darkMode={darkMode} />
+              <NavButton active={activeTab === 'communication'} tabId="communication" onClick={handleTabChange} icon={MessageSquare} label="Mesajlaşma" darkMode={darkMode} />
               
               <div className="pt-10">
                   <div className="p-6 rounded-3xl bg-indigo-600/5 border border-indigo-500/10">
@@ -246,10 +268,38 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, language = 'TR', onLogout
   );
 };
 
-const NavButton = ({active, onClick, icon: Icon, label, darkMode}: any) => (
-    <button onClick={onClick} className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${active ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-600/20' : `text-slate-500 hover:bg-slate-200/50 dark:hover:bg-slate-800 ${darkMode ? 'hover:text-slate-200' : 'hover:text-slate-900'}`}`}>
-        <Icon className={`w-4 h-4 ${active ? 'text-white' : 'text-slate-400'}`} /> {label}
+/**
+ * ⚡ PERFORMANCE OPTIMIZATION: Memoized NavButton with React.memo and useCallback wrapper
+ * to completely eliminate redundant re-rendering of settings menu options during text typing.
+ */
+interface NavButtonProps {
+  active: boolean;
+  tabId: SettingsTab;
+  onClick: (tab: SettingsTab) => void;
+  icon: any;
+  label: string;
+  darkMode: boolean;
+}
+
+const NavButton: React.FC<NavButtonProps> = React.memo(({ active, tabId, onClick, icon: Icon, label, darkMode }) => {
+  const handleClick = useCallback(() => {
+    onClick(tabId);
+  }, [onClick, tabId]);
+
+  return (
+    <button
+      onClick={handleClick}
+      className={`w-full flex items-center gap-4 px-6 py-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all ${
+        active
+          ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-600/20'
+          : `text-slate-500 hover:bg-slate-200/50 dark:hover:bg-slate-800 ${darkMode ? 'hover:text-slate-200' : 'hover:text-slate-900'}`
+      }`}
+    >
+      <Icon className={`w-4 h-4 ${active ? 'text-white' : 'text-slate-400'}`} /> {label}
     </button>
-);
+  );
+});
+
+NavButton.displayName = 'NavButton';
 
 export default Settings;

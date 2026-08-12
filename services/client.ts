@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 // Environment variables with development fallback
 // ⚠️ NOTE: Fallback values for private development only
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://rfwwntmaktyunbbqdtkq.supabase.co';
-const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dummy';
 
 // Validate configuration
 if (!SUPABASE_URL || !SUPABASE_KEY) {

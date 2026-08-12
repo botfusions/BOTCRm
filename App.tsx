@@ -31,6 +31,10 @@ const App: React.FC = () => {
   useEffect(() => {
     // 1. Mevcut oturumu kontrol et
     const checkUser = async () => {
+      if (!import.meta.env.VITE_SUPABASE_ANON_KEY) {
+        setInitializing(false);
+        return;
+      }
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {

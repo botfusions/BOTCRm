@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, Suspense, lazy } from 'react';
+import React, { useState, useEffect, Suspense, lazy, useCallback } from 'react';
 import Sidebar from './components/Sidebar';
 import { Tab } from './types';
 import { Construction, Bell, Search, HelpCircle, Plus, Loader2 } from 'lucide-react';
@@ -75,12 +75,17 @@ const App: React.FC = () => {
     }
   }, [darkMode, showLanding]);
 
-  const handleLogin = () => setShowLanding(false);
+  /**
+   * ⚡ PERFORMANCE OPTIMIZATION: Stabilized callbacks using useCallback to ensure
+   * referential stability, preventing unnecessary re-renders of memoized child components
+   * like Sidebar and LandingPage.
+   */
+  const handleLogin = useCallback(() => setShowLanding(false), []);
   
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     await supabase.auth.signOut();
     setShowLanding(true);
-  };
+  }, []);
 
   const renderContent = () => {
     switch (activeTab) {

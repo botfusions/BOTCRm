@@ -188,4 +188,12 @@ const Sidebar: React.FC<SidebarProps> = ({
   );
 };
 
-export default Sidebar;
+/**
+ * ⚡ PERFORMANCE OPTIMIZATION: Memoized Sidebar component to prevent redundant
+ * re-renders of the navigation panel (including all static icon assets and nested lists)
+ * during parent state updates (such as rapid input typing, theme toggling, or data fetches).
+ */
+const MemoizedSidebar = React.memo(Sidebar);
+MemoizedSidebar.displayName = 'Sidebar';
+
+export default MemoizedSidebar;

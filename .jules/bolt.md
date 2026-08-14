@@ -21,3 +21,7 @@
 ## 2024-07-05 - Landing Page State Isolation and Component Memoization
 **Learning:** Toggling a simple top-level boolean state (like a modal visibility) can cause a full re-render of a complex landing page if event handlers are not stabilized. Stabilizing callbacks with `useCallback` and memoizing heavy sub-sections (`Hero`, `Grid`, `Pricing`) with `React.memo` ensures that UI feedback is near-instant without redundant execution of heavy motion animations. Hoisting large translation objects outside components also reduces GC pressure during these renders.
 **Action:** Always wrap top-level landing page sections in `React.memo` and stabilize their event handlers when introducing global UI state like modals or drawers.
+
+## 2024-07-10 - Settings Form and Sidebar Navigation Performance Isolation
+**Learning:** In complex configuration/form screens, frequent updates to form state (e.g., via `onChange` handlers) can trigger heavy re-renders across the entire component tree, including static sidebar menus and navigation items. Isolating sidebar navigation buttons into memoized components (using `React.memo`) and passing stabilized callbacks (using `useCallback`) prevents keystroke updates from causing layout updates, resulting in an instantly responsive typing experience.
+**Action:** Always memoize navigation buttons and sidebar sub-components in form-heavy screens. Wrap form state handlers in `useCallback` and compute style classes inside `useMemo` to completely eliminate GC overhead and extra layout render cycles during text input.

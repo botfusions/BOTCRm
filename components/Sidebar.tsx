@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { 
   LayoutGrid, 
   Inbox, 
@@ -19,6 +19,49 @@ import {
   Settings as SettingsIcon
 } from 'lucide-react';
 import { Tab } from '../types';
+
+/**
+ * ⚡ PERFORMANCE OPTIMIZATION:
+ * 1. Extracted `NavItem` into a React.memo component so individual navigation buttons
+ *    only re-render when their active state or label changes rather than re-rendering all nav buttons.
+ * 2. Wrapped `Sidebar` in React.memo to isolate sidebar re-renders from unrelated App state changes
+ *    (e.g., top header search, user profile state updates).
+ */
+
+interface NavItemProps {
+  id: Tab;
+  icon: React.ElementType;
+  label: string;
+  isActive: boolean;
+  onClick: (id: Tab) => void;
+}
+
+const NavItem = React.memo<NavItemProps>(({ id, icon: Icon, label, isActive, onClick }) => {
+  const handleClick = useCallback(() => {
+    onClick(id);
+  }, [id, onClick]);
+
+  return (
+    <button
+      onClick={handleClick}
+      className={`w-full flex items-center justify-between px-4 py-2.5 mb-1 rounded-lg transition-all duration-200 group ${
+        isActive
+          ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/20'
+          : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'
+      }`}
+    >
+      <div className="flex items-center gap-3">
+        <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-100'}`} />
+        <span className="text-sm font-medium tracking-wide">
+          {label}
+        </span>
+      </div>
+      {isActive && <ChevronRight className="w-3 h-3 text-indigo-200 opacity-50" />}
+    </button>
+  );
+});
+
+NavItem.displayName = 'NavItem';
 
 interface SidebarProps {
   activeTab: Tab;
@@ -69,28 +112,24 @@ const Sidebar: React.FC<SidebarProps> = ({
     { id: Tab.SETTINGS, icon: SettingsIcon, label: language === 'TR' ? 'Ayarlar & Admin' : 'Settings & Admin' },
   ], [language]);
 
-  const renderNavItem = (item: { id: Tab, icon: any, label: string }) => {
-    const isActive = activeTab === item.id;
-    return (
-      <button
-        key={item.id}
-        onClick={() => setActiveTab(item.id)}
-        className={`w-full flex items-center justify-between px-4 py-2.5 mb-1 rounded-lg transition-all duration-200 group ${
-          isActive 
-            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/20' 
-            : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100'
-        }`}
-      >
-        <div className="flex items-center gap-3">
-            <item.icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-100'}`} />
-            <span className="text-sm font-medium tracking-wide">
-            {item.label}
-            </span>
-        </div>
-        {isActive && <ChevronRight className="w-3 h-3 text-indigo-200 opacity-50" />}
-      </button>
-    );
-  };
+  const renderNavItem = useCallback((item: { id: Tab; icon: React.ElementType; label: string }) => (
+    <NavItem
+      key={item.id}
+      id={item.id}
+      icon={item.icon}
+      label={item.label}
+      isActive={activeTab === item.id}
+      onClick={setActiveTab}
+    />
+  ), [activeTab, setActiveTab]);
+
+  const handleToggleDarkMode = useCallback(() => {
+    setDarkMode(!darkMode);
+  }, [darkMode, setDarkMode]);
+
+  const handleToggleLanguage = useCallback(() => {
+    setLanguage(language === 'TR' ? 'EN' : 'TR');
+  }, [language, setLanguage]);
 
   return (
     <div className="w-64 h-full flex flex-col bg-[#0F172A] border-r border-slate-800 text-slate-100 shrink-0">
@@ -154,7 +193,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         <div className="flex items-center justify-between mb-4 bg-slate-800/50 p-1 rounded-lg">
             {/* Theme Toggle */}
             <button 
-                onClick={() => setDarkMode(!darkMode)}
+                onClick={handleToggleDarkMode}
                 className="flex-1 flex items-center justify-center py-1.5 rounded-md text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
             >
                 {darkMode ? <Sun className="w-4 h-4 mr-1.5" /> : <Moon className="w-4 h-4 mr-1.5" />}
@@ -163,7 +202,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             <div className="w-[1px] h-4 bg-slate-700 mx-1"></div>
             {/* Lang Toggle */}
             <button 
-                onClick={() => setLanguage(language === 'TR' ? 'EN' : 'TR')}
+                onClick={handleToggleLanguage}
                 className="flex-1 flex items-center justify-center py-1.5 rounded-md text-xs font-medium text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
             >
                 {language}
@@ -188,4 +227,4 @@ const Sidebar: React.FC<SidebarProps> = ({
   );
 };
 
-export default Sidebar;
+export default React.memo(Sidebar);

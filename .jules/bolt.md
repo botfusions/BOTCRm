@@ -21,3 +21,7 @@
 ## 2024-07-05 - Landing Page State Isolation and Component Memoization
 **Learning:** Toggling a simple top-level boolean state (like a modal visibility) can cause a full re-render of a complex landing page if event handlers are not stabilized. Stabilizing callbacks with `useCallback` and memoizing heavy sub-sections (`Hero`, `Grid`, `Pricing`) with `React.memo` ensures that UI feedback is near-instant without redundant execution of heavy motion animations. Hoisting large translation objects outside components also reduces GC pressure during these renders.
 **Action:** Always wrap top-level landing page sections in `React.memo` and stabilize their event handlers when introducing global UI state like modals or drawers.
+
+## 2026-06-15 - Lead Form State Isolation and Modal Extraction
+**Learning:** Storing local form input state (like text raw analysis, full name, email, phone) in a parent component that contains heavy list mappings (such as a database of leads) is a major React rendering bottleneck. Extracting AI capture panels and modal dialogs into separate, memoized components wrapped in `React.memo` completely isolates keystroke and parsing updates to the local subcomponents. Main list re-renders on keystroke drop from $O(N)$ (proportional to total leads) to zero, ensuring perfect input responsiveness.
+**Action:** Separate data display components from interactive data entry components. Wrap forms and modals in `React.memo`, pass stable callback handlers created with `useCallback` from the parent, and keep local form state isolated.

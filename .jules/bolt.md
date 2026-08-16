@@ -21,3 +21,7 @@
 ## 2024-07-05 - Landing Page State Isolation and Component Memoization
 **Learning:** Toggling a simple top-level boolean state (like a modal visibility) can cause a full re-render of a complex landing page if event handlers are not stabilized. Stabilizing callbacks with `useCallback` and memoizing heavy sub-sections (`Hero`, `Grid`, `Pricing`) with `React.memo` ensures that UI feedback is near-instant without redundant execution of heavy motion animations. Hoisting large translation objects outside components also reduces GC pressure during these renders.
 **Action:** Always wrap top-level landing page sections in `React.memo` and stabilize their event handlers when introducing global UI state like modals or drawers.
+
+## 2024-07-10 - Modal Keystroke State Isolation and Success Handshake
+**Learning:** Placing forms with multiple text inputs directly inside parent screens leads to severe keystroke lags because each keypress triggers full-screen re-renders, impacting heavy list reconciliation. Moving the state down to a memoized modal child component (`AddContactModal`) isolates the inputs completely. Furthermore, having the parent save callback return a success `boolean` establishes a robust handshake, allowing the child modal to wipe inputs only on actual backend success.
+**Action:** Always isolate interactive forms/modals into memoized subcomponents to keep typing snappy. Design handlers with boolean promises to selectively clear input state on successful operations.

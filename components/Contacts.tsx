@@ -107,6 +107,86 @@ const ContactRow = React.memo(({
     </tr>
 ));
 
+// ⚡ PERFORMANCE OPTIMIZATION: Extracting Add Contact Modal to prevent full screen list re-renders on keystroke input
+interface AddContactModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onAddContact: (contact: { fullName: string; title: string; email: string; phone: string }) => Promise<boolean>;
+    darkMode: boolean;
+    bgCard: string;
+    textMain: string;
+    textSub: string;
+}
+
+const AddContactModal = React.memo(({
+    isOpen,
+    onClose,
+    onAddContact,
+    darkMode,
+    bgCard,
+    textMain,
+    textSub
+}: AddContactModalProps) => {
+    const [newContact, setNewContact] = useState({
+        fullName: '',
+        title: '',
+        email: '',
+        phone: '',
+    });
+
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    if (!isOpen) return null;
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+        try {
+            const success = await onAddContact(newContact);
+            if (success) {
+                setNewContact({ fullName: '', title: '', email: '', phone: '' });
+            }
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+            <div className={`w-full max-w-md rounded-[3rem] border shadow-2xl overflow-hidden ${bgCard}`}>
+                <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-indigo-600/5">
+                    <h2 className={`text-xl font-black uppercase tracking-widest ${textMain}`}>Yeni Kişi</h2>
+                    <button onClick={onClose} className={textSub} aria-label="Close modal"><X className="w-6 h-6"/></button>
+                </div>
+                <form onSubmit={handleSubmit} className="p-10 space-y-6">
+                    <div className="space-y-1.5">
+                        <label className="text-[10px] font-black text-slate-500 uppercase ml-1">Tam Adı *</label>
+                        <input required placeholder="Ad Soyad" value={newContact.fullName} onChange={e => setNewContact(prev => ({...prev, fullName: e.target.value}))} className={`w-full px-5 py-4 rounded-2xl border text-sm font-bold outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all ${darkMode ? 'bg-slate-950 border-slate-800 text-white focus:border-indigo-500' : 'bg-slate-50 border-slate-200 focus:border-indigo-500'}`} />
+                    </div>
+                    <div className="space-y-1.5">
+                        <label className="text-[10px] font-black text-slate-500 uppercase ml-1">Ünvan</label>
+                        <input placeholder="Örn: CTO" value={newContact.title} onChange={e => setNewContact(prev => ({...prev, title: e.target.value}))} className={`w-full px-5 py-4 rounded-2xl border text-sm font-bold outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all ${darkMode ? 'bg-slate-950 border-slate-800 text-white focus:border-indigo-500' : 'bg-slate-50 border-slate-200 focus:border-indigo-500'}`} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-black text-slate-500 uppercase ml-1">E-posta</label>
+                            <input required type="email" placeholder="mail@mail.com" value={newContact.email} onChange={e => setNewContact(prev => ({...prev, email: e.target.value}))} className={`w-full px-5 py-4 rounded-2xl border text-sm font-bold outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all ${darkMode ? 'bg-slate-950 border-slate-800 text-white focus:border-indigo-500' : 'bg-slate-50 border-slate-200 focus:border-indigo-500'}`} />
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-[10px] font-black text-slate-500 uppercase ml-1">Telefon</label>
+                            <input required placeholder="+90" value={newContact.phone} onChange={e => setNewContact(prev => ({...prev, phone: e.target.value}))} className={`w-full px-5 py-4 rounded-2xl border text-sm font-bold outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all ${darkMode ? 'bg-slate-950 border-slate-800 text-white focus:border-indigo-500' : 'bg-slate-50 border-slate-200 focus:border-indigo-500'}`} />
+                        </div>
+                    </div>
+                    <button type="submit" disabled={isSubmitting} className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black text-[11px] tracking-[0.2em] shadow-2xl shadow-indigo-600/30 hover:bg-indigo-700 mt-4 transition-transform hover:scale-[1.02] active:scale-95 uppercase disabled:opacity-50">
+                        {isSubmitting ? 'Kaydediliyor...' : 'Kişiyi Kaydet'}
+                    </button>
+                </form>
+            </div>
+        </div>
+    );
+});
+AddContactModal.displayName = 'AddContactModal';
+
 const Contacts: React.FC<ContactsProps> = ({ darkMode, language = 'TR' }) => {
     const [contacts, setContacts] = useState<Contact[]>([]);
     const [loading, setLoading] = useState(true);
@@ -116,13 +196,6 @@ const Contacts: React.FC<ContactsProps> = ({ darkMode, language = 'TR' }) => {
     const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
     const [openMenuId, setOpenMenuId] = useState<string | null>(null);
     const [errorType, setErrorType] = useState<string | null>(null);
-    
-    const [newContact, setNewContact] = useState({
-        fullName: '',
-        title: '',
-        email: '',
-        phone: '',
-    });
 
     useEffect(() => {
         loadData();
@@ -177,24 +250,25 @@ const Contacts: React.FC<ContactsProps> = ({ darkMode, language = 'TR' }) => {
         setOpenMenuId(prev => prev === id ? null : id);
     }, [setOpenMenuId]);
 
-    const handleAddSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    // ⚡ PERFORMANCE OPTIMIZATION: Stabilizing add contact callback to keep form submission and rendering isolated
+    const handleAddContact = useCallback(async (contactData: { fullName: string; title: string; email: string; phone: string }) => {
         const contact: Omit<Contact, 'id'> = {
-            fullName: newContact.fullName,
-            title: newContact.title,
-            email: newContact.email,
-            phone: newContact.phone,
+            fullName: contactData.fullName,
+            title: contactData.title,
+            email: contactData.email,
+            phone: contactData.phone,
             companyId: 'manual',
-            avatarUrl: `https://ui-avatars.com/api/?name=${newContact.fullName}&background=6366f1&color=fff`,
+            avatarUrl: `https://ui-avatars.com/api/?name=${contactData.fullName}&background=6366f1&color=fff`,
             status: 'Active'
         };
         const saved = await createContact(contact);
         if (saved) {
             setContacts(prev => [saved, ...prev]);
             setIsAddModalOpen(false);
-            setNewContact({ fullName: '', title: '', email: '', phone: '' });
+            return true;
         }
-    };
+        return false;
+    }, [setContacts, setIsAddModalOpen]);
 
     const bgCard = darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200';
     const textMain = darkMode ? 'text-white' : 'text-slate-900';
@@ -352,38 +426,16 @@ const Contacts: React.FC<ContactsProps> = ({ darkMode, language = 'TR' }) => {
                 </div>
             )}
 
-            {/* ADD MODAL */}
-            {isAddModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-                    <div className={`w-full max-w-md rounded-[3rem] border shadow-2xl overflow-hidden ${bgCard}`}>
-                        <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-indigo-600/5">
-                            <h2 className={`text-xl font-black uppercase tracking-widest ${textMain}`}>Yeni Kişi</h2>
-                            <button onClick={() => setIsAddModalOpen(false)} className={textSub}><X className="w-6 h-6"/></button>
-                        </div>
-                        <form onSubmit={handleAddSubmit} className="p-10 space-y-6">
-                            <div className="space-y-1.5">
-                                <label className="text-[10px] font-black text-slate-500 uppercase ml-1">Tam Adı *</label>
-                                <input required placeholder="Ad Soyad" value={newContact.fullName} onChange={e => setNewContact({...newContact, fullName: e.target.value})} className={`w-full px-5 py-4 rounded-2xl border text-sm font-bold outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all ${darkMode ? 'bg-slate-950 border-slate-800 text-white focus:border-indigo-500' : 'bg-slate-50 border-slate-200 focus:border-indigo-500'}`} />
-                            </div>
-                            <div className="space-y-1.5">
-                                <label className="text-[10px] font-black text-slate-500 uppercase ml-1">Ünvan</label>
-                                <input placeholder="Örn: CTO" value={newContact.title} onChange={e => setNewContact({...newContact, title: e.target.value})} className={`w-full px-5 py-4 rounded-2xl border text-sm font-bold outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all ${darkMode ? 'bg-slate-950 border-slate-800 text-white focus:border-indigo-500' : 'bg-slate-50 border-slate-200 focus:border-indigo-500'}`} />
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-1.5">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase ml-1">E-posta</label>
-                                    <input required type="email" placeholder="mail@mail.com" value={newContact.email} onChange={e => setNewContact({...newContact, email: e.target.value})} className={`w-full px-5 py-4 rounded-2xl border text-sm font-bold outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all ${darkMode ? 'bg-slate-950 border-slate-800 text-white focus:border-indigo-500' : 'bg-slate-50 border-slate-200 focus:border-indigo-500'}`} />
-                                </div>
-                                <div className="space-y-1.5">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase ml-1">Telefon</label>
-                                    <input required placeholder="+90" value={newContact.phone} onChange={e => setNewContact({...newContact, phone: e.target.value})} className={`w-full px-5 py-4 rounded-2xl border text-sm font-bold outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all ${darkMode ? 'bg-slate-950 border-slate-800 text-white focus:border-indigo-500' : 'bg-slate-50 border-slate-200 focus:border-indigo-500'}`} />
-                                </div>
-                            </div>
-                            <button type="submit" className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black text-[11px] tracking-[0.2em] shadow-2xl shadow-indigo-600/30 hover:bg-indigo-700 mt-4 transition-transform hover:scale-[1.02] active:scale-95 uppercase">Kişiyi Kaydet</button>
-                        </form>
-                    </div>
-                </div>
-            )}
+            {/* ADD MODAL - MEMOIZED SUBCOMPONENT */}
+            <AddContactModal
+                isOpen={isAddModalOpen}
+                onClose={() => setIsAddModalOpen(false)}
+                onAddContact={handleAddContact}
+                darkMode={darkMode}
+                bgCard={bgCard}
+                textMain={textMain}
+                textSub={textSub}
+            />
         </div>
     );
 };

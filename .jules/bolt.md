@@ -21,3 +21,7 @@
 ## 2024-07-05 - Landing Page State Isolation and Component Memoization
 **Learning:** Toggling a simple top-level boolean state (like a modal visibility) can cause a full re-render of a complex landing page if event handlers are not stabilized. Stabilizing callbacks with `useCallback` and memoizing heavy sub-sections (`Hero`, `Grid`, `Pricing`) with `React.memo` ensures that UI feedback is near-instant without redundant execution of heavy motion animations. Hoisting large translation objects outside components also reduces GC pressure during these renders.
 **Action:** Always wrap top-level landing page sections in `React.memo` and stabilize their event handlers when introducing global UI state like modals or drawers.
+
+## 2026-06-06 - Input/Form State Isolation in Data-Heavy Master Views
+**Learning:** Having interactive form/text input states (such as AI Metin Analiz and Quick Manual Save inputs) inline within the same component as a large lead database list causes full parent component and child table list re-renders on every keystroke. Moving these interactive input states into their own dedicated sub-components (`AICapturePanel` and `AddLeadModal`) and wrapping them with `React.memo` isolates state updates perfectly, rendering only the typing inputs instead of the entire table.
+**Action:** Always isolate high-frequency interactive inputs (like textareas, inputs, and modals) into separate memoized components with stable callbacks (`useCallback`) to completely eliminate redundant child list layout/DOM reconciliation cycles.

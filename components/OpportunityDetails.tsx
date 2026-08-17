@@ -19,20 +19,102 @@ interface OpportunityDetailsProps {
   onBack: () => void;
 }
 
-const OpportunityDetails: React.FC<OpportunityDetailsProps> = ({ darkMode, language, onBack }) => {
+interface ContactData {
+  id: string;
+  badge: string;
+  badgeClass: string;
+  name: string;
+  role: string;
+  email: string;
+  phone: string;
+  avatar: string;
+}
+
+// ⚡ PERFORMANCE OPTIMIZATION: Hoisted static data structures outside component scope
+// to prevent allocation and garbage collection overhead on every re-render.
+const STAGES = [
+  { name: 'Prospecting', status: 'completed' },
+  { name: 'Qualified', status: 'completed' },
+  { name: 'Discovery', status: 'completed' },
+  { name: 'Proposal Sent', status: 'current' },
+  { name: 'Negotiation', status: 'upcoming' },
+  { name: 'Closed', status: 'upcoming' },
+];
+
+const CONTACTS_DATA: ContactData[] = [
+  {
+    id: 'c1',
+    badge: 'Primary Contact',
+    badgeClass: 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-300',
+    name: 'Jane Doe',
+    role: 'Product Manager',
+    email: 'leslie@market.com',
+    phone: '(208) 555-0112',
+    avatar: 'https://picsum.photos/100/100?random=20'
+  },
+  {
+    id: 'c2',
+    badge: 'Key Influencer',
+    badgeClass: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
+    name: 'John Smith',
+    role: 'IT Director',
+    email: 'john@market.com',
+    phone: '(208) 555-0112',
+    avatar: 'https://picsum.photos/100/100?random=21'
+  },
+  {
+    id: 'c3',
+    badge: 'Final Approver',
+    badgeClass: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
+    name: 'Mike Ross',
+    role: 'CTO',
+    email: 'mike@market.com',
+    phone: '(208) 555-0112',
+    avatar: 'https://picsum.photos/100/100?random=22'
+  }
+];
+
+// ⚡ PERFORMANCE OPTIMIZATION: Memoized contact card component to prevent unnecessary re-renders
+// when parent component updates. Also uses native lazy loading for avatar images.
+const ContactCard: React.FC<{
+  contact: ContactData;
+  bgCard: string;
+  textMain: string;
+  textSub: string;
+}> = React.memo(({ contact, bgCard, textMain, textSub }) => (
+  <div className={`rounded-xl border p-4 shadow-sm mb-3 ${bgCard}`}>
+    <div className={`inline-block px-2 py-0.5 ${contact.badgeClass} text-[10px] font-bold uppercase tracking-wider rounded mb-3`}>
+      {contact.badge}
+    </div>
+    <div className="flex items-center gap-3 mb-4">
+      <img src={contact.avatar} className="w-10 h-10 rounded-full" alt={contact.name} loading="lazy" />
+      <div>
+        <p className={`text-sm font-bold ${textMain}`}>{contact.name}</p>
+        <p className={`text-xs ${textSub}`}>{contact.role}</p>
+      </div>
+      <button className="ml-auto text-slate-400 hover:text-slate-600" aria-label="More options">
+        <MoreHorizontal className="w-4 h-4" />
+      </button>
+    </div>
+    <div className="space-y-2">
+      <div className="flex items-center gap-2 text-xs text-slate-500">
+        <Mail className="w-3.5 h-3.5" />
+        <span>{contact.email}</span>
+      </div>
+      <div className="flex items-center gap-2 text-xs text-slate-500">
+        <Phone className="w-3.5 h-3.5" />
+        <span>{contact.phone}</span>
+      </div>
+    </div>
+  </div>
+));
+
+ContactCard.displayName = 'ContactCard';
+
+const OpportunityDetails: React.FC<OpportunityDetailsProps> = React.memo(({ darkMode, language, onBack }) => {
   const bgCard = darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200';
   const textMain = darkMode ? 'text-white' : 'text-slate-900';
   const textSub = darkMode ? 'text-slate-400' : 'text-slate-500';
-  const border = darkMode ? 'border-slate-800' : 'border-slate-200';
-
-  const stages = [
-    { name: 'Prospecting', status: 'completed' },
-    { name: 'Qualified', status: 'completed' },
-    { name: 'Discovery', status: 'completed' },
-    { name: 'Proposal Sent', status: 'current' },
-    { name: 'Negotiation', status: 'upcoming' },
-    { name: 'Closed', status: 'upcoming' },
-  ];
 
   return (
     <div className={`h-full flex flex-col overflow-hidden ${darkMode ? 'bg-slate-950' : 'bg-[#F3F4F6]'}`}>
@@ -40,7 +122,7 @@ const OpportunityDetails: React.FC<OpportunityDetailsProps> = ({ darkMode, langu
       {/* Header */}
       <div className={`px-8 py-5 border-b shrink-0 flex items-center justify-between ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
          <div className="flex items-center gap-4">
-            <button onClick={onBack} className={`p-2 rounded-lg transition-colors ${darkMode ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}>
+            <button onClick={onBack} className={`p-2 rounded-lg transition-colors ${darkMode ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`} aria-label="Back">
                 <ArrowLeft className="w-5 h-5" />
             </button>
             <div>
@@ -53,13 +135,13 @@ const OpportunityDetails: React.FC<OpportunityDetailsProps> = ({ darkMode, langu
             </div>
          </div>
          <div className="flex gap-3">
-             <button className={`p-2 rounded-full ${darkMode ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}>
+             <button className={`p-2 rounded-full ${darkMode ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`} aria-label="Search">
                  <Search className="w-5 h-5" />
              </button>
-              <button className={`p-2 rounded-full ${darkMode ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}>
+              <button className={`p-2 rounded-full ${darkMode ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`} aria-label="More options">
                  <MoreHorizontal className="w-5 h-5" />
              </button>
-             <button className="p-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 shadow-sm">
+             <button className="p-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 shadow-sm" aria-label="Add item">
                  <Plus className="w-5 h-5" />
              </button>
          </div>
@@ -86,7 +168,7 @@ const OpportunityDetails: React.FC<OpportunityDetailsProps> = ({ darkMode, langu
                         {/* Connecting Line */}
                         <div className={`absolute top-1/2 left-0 w-full h-0.5 -translate-y-1/2 -z-0 ${darkMode ? 'bg-slate-800' : 'bg-slate-100'}`}></div>
                         
-                        {stages.map((stage, index) => (
+                        {STAGES.map((stage, index) => (
                             <div key={index} className="relative z-10 flex flex-col items-center gap-2 bg-inherit px-2">
                                 <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold border-2 transition-colors
                                     ${stage.status === 'completed' ? 'bg-slate-900 border-slate-900 text-white dark:bg-white dark:border-white dark:text-slate-900' : 
@@ -176,7 +258,7 @@ const OpportunityDetails: React.FC<OpportunityDetailsProps> = ({ darkMode, langu
                             </div>
                             <div className="pb-6">
                                 <div className="flex items-center gap-2 mb-1">
-                                    <img src="https://picsum.photos/100/100?random=10" className="w-5 h-5 rounded-full" />
+                                    <img src="https://picsum.photos/100/100?random=10" className="w-5 h-5 rounded-full" alt="User avatar" loading="lazy" />
                                     <span className={`text-sm font-medium ${textMain}`}>John scheduled a call</span>
                                     <span className={`text-xs ${textSub}`}>Apr 18, 2023 at 4:05PM</span>
                                 </div>
@@ -210,91 +292,20 @@ const OpportunityDetails: React.FC<OpportunityDetailsProps> = ({ darkMode, langu
                 <div>
                      <div className="flex justify-between items-center mb-4">
                         <h3 className={`font-semibold ${textMain}`}>Contacts</h3>
-                        <button className={`p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 ${textSub}`}>
+                        <button className={`p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 ${textSub}`} aria-label="Add contact">
                             <Plus className="w-4 h-4" />
                         </button>
                     </div>
 
-                    {/* Contact Card 1 */}
-                    <div className={`rounded-xl border p-4 shadow-sm mb-3 ${bgCard}`}>
-                         <div className="inline-block px-2 py-0.5 bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-300 text-[10px] font-bold uppercase tracking-wider rounded mb-3">
-                            Primary Contact
-                         </div>
-                         <div className="flex items-center gap-3 mb-4">
-                            <img src="https://picsum.photos/100/100?random=20" className="w-10 h-10 rounded-full" />
-                            <div>
-                                <p className={`text-sm font-bold ${textMain}`}>Jane Doe</p>
-                                <p className={`text-xs ${textSub}`}>Product Manager</p>
-                            </div>
-                            <button className="ml-auto text-slate-400 hover:text-slate-600">
-                                <MoreHorizontal className="w-4 h-4" />
-                            </button>
-                         </div>
-                         <div className="space-y-2">
-                             <div className="flex items-center gap-2 text-xs text-slate-500">
-                                <Mail className="w-3.5 h-3.5" />
-                                <span>leslie@market.com</span>
-                             </div>
-                             <div className="flex items-center gap-2 text-xs text-slate-500">
-                                <Phone className="w-3.5 h-3.5" />
-                                <span>(208) 555-0112</span>
-                             </div>
-                         </div>
-                    </div>
-
-                    {/* Contact Card 2 */}
-                    <div className={`rounded-xl border p-4 shadow-sm mb-3 ${bgCard}`}>
-                         <div className="inline-block px-2 py-0.5 bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 text-[10px] font-bold uppercase tracking-wider rounded mb-3">
-                            Key Influencer
-                         </div>
-                         <div className="flex items-center gap-3 mb-4">
-                            <img src="https://picsum.photos/100/100?random=21" className="w-10 h-10 rounded-full" />
-                            <div>
-                                <p className={`text-sm font-bold ${textMain}`}>John Smith</p>
-                                <p className={`text-xs ${textSub}`}>IT Director</p>
-                            </div>
-                            <button className="ml-auto text-slate-400 hover:text-slate-600">
-                                <MoreHorizontal className="w-4 h-4" />
-                            </button>
-                         </div>
-                         <div className="space-y-2">
-                             <div className="flex items-center gap-2 text-xs text-slate-500">
-                                <Mail className="w-3.5 h-3.5" />
-                                <span>john@market.com</span>
-                             </div>
-                             <div className="flex items-center gap-2 text-xs text-slate-500">
-                                <Phone className="w-3.5 h-3.5" />
-                                <span>(208) 555-0112</span>
-                             </div>
-                         </div>
-                    </div>
-
-                    {/* Contact Card 3 */}
-                    <div className={`rounded-xl border p-4 shadow-sm ${bgCard}`}>
-                         <div className="inline-block px-2 py-0.5 bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 text-[10px] font-bold uppercase tracking-wider rounded mb-3">
-                            Final Approver
-                         </div>
-                         <div className="flex items-center gap-3 mb-4">
-                            <img src="https://picsum.photos/100/100?random=22" className="w-10 h-10 rounded-full" />
-                            <div>
-                                <p className={`text-sm font-bold ${textMain}`}>Mike Ross</p>
-                                <p className={`text-xs ${textSub}`}>CTO</p>
-                            </div>
-                            <button className="ml-auto text-slate-400 hover:text-slate-600">
-                                <MoreHorizontal className="w-4 h-4" />
-                            </button>
-                         </div>
-                         <div className="space-y-2">
-                             <div className="flex items-center gap-2 text-xs text-slate-500">
-                                <Mail className="w-3.5 h-3.5" />
-                                <span>mike@market.com</span>
-                             </div>
-                             <div className="flex items-center gap-2 text-xs text-slate-500">
-                                <Phone className="w-3.5 h-3.5" />
-                                <span>(208) 555-0112</span>
-                             </div>
-                         </div>
-                    </div>
+                    {CONTACTS_DATA.map(contact => (
+                      <ContactCard
+                        key={contact.id}
+                        contact={contact}
+                        bgCard={bgCard}
+                        textMain={textMain}
+                        textSub={textSub}
+                      />
+                    ))}
                 </div>
 
                 {/* Company Section */}
@@ -311,7 +322,7 @@ const OpportunityDetails: React.FC<OpportunityDetailsProps> = ({ darkMode, langu
                                     <p className={`text-xs ${textSub}`}>Technology</p>
                                  </div>
                              </div>
-                              <button className="text-slate-400 hover:text-slate-600">
+                              <button className="text-slate-400 hover:text-slate-600" aria-label="More options">
                                 <MoreHorizontal className="w-4 h-4" />
                             </button>
                          </div>
@@ -339,6 +350,8 @@ const OpportunityDetails: React.FC<OpportunityDetailsProps> = ({ darkMode, langu
       </div>
     </div>
   );
-};
+});
+
+OpportunityDetails.displayName = 'OpportunityDetails';
 
 export default OpportunityDetails;

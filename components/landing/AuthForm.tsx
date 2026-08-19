@@ -12,7 +12,50 @@ interface AuthFormProps {
   language: 'TR' | 'EN';
 }
 
-const AuthForm: React.FC<AuthFormProps> = ({ isOpen, onClose, onSuccess, language }) => {
+// ⚡ PERFORMANCE OPTIMIZATION: Hoist static translation dictionary and password regex outside
+// component scope to avoid object re-allocation and regex recompilation on every input keystroke.
+const TRANSLATIONS = {
+  TR: {
+    login: "Giriş Yap",
+    signup: "Kayıt Ol",
+    demo: "Demo Girişi",
+    email: "E-posta Adresi",
+    pass: "Şifre",
+    name: "Ad Soyad",
+    phone: "Telefon Numarası",
+    noAcc: "Hesabın yok mu?",
+    haveAcc: "Zaten üye misin?",
+    welcome: "Tekrar Hoş Geldin",
+    join: "BOTSCRm'e Katıl",
+    error: "Giriş bilgileri hatalı. Lütfen bilgileri kontrol edin.",
+    confirmEmail: "Lütfen e-postanıza gelen onay linkine tıklayın.",
+    success: "Giriş başarılı!",
+    emailHint: "E-postanızı doğrulamayı unutmayın."
+  },
+  EN: {
+    login: "Login",
+    signup: "Sign Up",
+    demo: "Demo Access",
+    email: "Email Address",
+    pass: "Password",
+    name: "Full Name",
+    phone: "Phone Number",
+    noAcc: "Don't have an account?",
+    haveAcc: "Already a member?",
+    welcome: "Welcome Back",
+    join: "Join BOTSCRm",
+    error: "Invalid credentials. Please check your info.",
+    confirmEmail: "Please confirm your email address via the link sent.",
+    success: "Success!",
+    emailHint: "Don't forget to confirm your email."
+  }
+} as const;
+
+const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+
+// ⚡ PERFORMANCE OPTIMIZATION: Memoize AuthForm component to prevent redundant re-renders
+// when parent components update unrelated state.
+const AuthForm: React.FC<AuthFormProps> = React.memo(({ isOpen, onClose, onSuccess, language }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -22,42 +65,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ isOpen, onClose, onSuccess, languag
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
 
-  const t = {
-    TR: {
-      login: "Giriş Yap",
-      signup: "Kayıt Ol",
-      demo: "Demo Girişi",
-      email: "E-posta Adresi",
-      pass: "Şifre",
-      name: "Ad Soyad",
-      phone: "Telefon Numarası",
-      noAcc: "Hesabın yok mu?",
-      haveAcc: "Zaten üye misin?",
-      welcome: "Tekrar Hoş Geldin",
-      join: "BOTSCRm'e Katıl",
-      error: "Giriş bilgileri hatalı. Lütfen bilgileri kontrol edin.",
-      confirmEmail: "Lütfen e-postanıza gelen onay linkine tıklayın.",
-      success: "Giriş başarılı!",
-      emailHint: "E-postanızı doğrulamayı unutmayın."
-    },
-    EN: {
-      login: "Login",
-      signup: "Sign Up",
-      demo: "Demo Access",
-      email: "Email Address",
-      pass: "Password",
-      name: "Full Name",
-      phone: "Phone Number",
-      noAcc: "Don't have an account?",
-      haveAcc: "Already a member?",
-      welcome: "Welcome Back",
-      join: "Join BOTSCRm",
-      error: "Invalid credentials. Please check your info.",
-      confirmEmail: "Please confirm your email address via the link sent.",
-      success: "Success!",
-      emailHint: "Don't forget to confirm your email."
-    }
-  }[language];
+  const t = TRANSLATIONS[language];
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,8 +96,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ isOpen, onClose, onSuccess, languag
         }
       } else {
         // 🔒 SECURITY: Password strength validation
-        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
-        if (!passwordRegex.test(password)) {
+        if (!PASSWORD_REGEX.test(password)) {
           throw new Error(
             language === 'TR'
               ? 'Şifre en az 8 karakter, 1 büyük harf, 1 küçük harf ve 1 rakam içermelidir.'
@@ -289,6 +296,6 @@ const AuthForm: React.FC<AuthFormProps> = ({ isOpen, onClose, onSuccess, languag
       )}
     </AnimatePresence>
   );
-};
+});
 
 export default AuthForm;

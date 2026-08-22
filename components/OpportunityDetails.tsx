@@ -1,7 +1,6 @@
 import React from 'react';
 import { 
   Check, 
-  ChevronRight, 
   MoreHorizontal, 
   Phone, 
   Mail, 
@@ -19,20 +18,101 @@ interface OpportunityDetailsProps {
   onBack: () => void;
 }
 
-const OpportunityDetails: React.FC<OpportunityDetailsProps> = ({ darkMode, language, onBack }) => {
+// ⚡ PERFORMANCE OPTIMIZATION: Hoist static data outside component scope to prevent re-allocation on every render.
+const STAGES = [
+  { name: 'Prospecting', status: 'completed' },
+  { name: 'Qualified', status: 'completed' },
+  { name: 'Discovery', status: 'completed' },
+  { name: 'Proposal Sent', status: 'current' },
+  { name: 'Negotiation', status: 'upcoming' },
+  { name: 'Closed', status: 'upcoming' },
+] as const;
+
+interface Contact {
+  id: string;
+  name: string;
+  title: string;
+  role: string;
+  roleColor: string;
+  email: string;
+  phone: string;
+  avatar: string;
+}
+
+const CONTACTS_DATA: Contact[] = [
+  {
+    id: '1',
+    name: 'Jane Doe',
+    title: 'Product Manager',
+    role: 'Primary Contact',
+    roleColor: 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-300',
+    email: 'leslie@market.com',
+    phone: '(208) 555-0112',
+    avatar: 'https://picsum.photos/100/100?random=20'
+  },
+  {
+    id: '2',
+    name: 'John Smith',
+    title: 'IT Director',
+    role: 'Key Influencer',
+    roleColor: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
+    email: 'john@market.com',
+    phone: '(208) 555-0112',
+    avatar: 'https://picsum.photos/100/100?random=21'
+  },
+  {
+    id: '3',
+    name: 'Mike Ross',
+    title: 'CTO',
+    role: 'Final Approver',
+    roleColor: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
+    email: 'mike@market.com',
+    phone: '(208) 555-0112',
+    avatar: 'https://picsum.photos/100/100?random=22'
+  }
+];
+
+// ⚡ PERFORMANCE OPTIMIZATION: Extract ContactCard into a React.memo subcomponent with lazy loading on avatars
+const ContactCard: React.FC<{ contact: Contact; bgCard: string; textMain: string; textSub: string }> = React.memo(
+  ({ contact, bgCard, textMain, textSub }) => (
+    <div className={`rounded-xl border p-4 shadow-sm mb-3 ${bgCard}`}>
+      <div className={`inline-block px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded mb-3 ${contact.roleColor}`}>
+        {contact.role}
+      </div>
+      <div className="flex items-center gap-3 mb-4">
+        <img
+          src={contact.avatar}
+          alt={contact.name}
+          loading="lazy"
+          className="w-10 h-10 rounded-full"
+        />
+        <div>
+          <p className={`text-sm font-bold ${textMain}`}>{contact.name}</p>
+          <p className={`text-xs ${textSub}`}>{contact.title}</p>
+        </div>
+        <button className="ml-auto text-slate-400 hover:text-slate-600">
+          <MoreHorizontal className="w-4 h-4" />
+        </button>
+      </div>
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 text-xs text-slate-500">
+          <Mail className="w-3.5 h-3.5" />
+          <span>{contact.email}</span>
+        </div>
+        <div className="flex items-center gap-2 text-xs text-slate-500">
+          <Phone className="w-3.5 h-3.5" />
+          <span>{contact.phone}</span>
+        </div>
+      </div>
+    </div>
+  )
+);
+
+// ⚡ PERFORMANCE OPTIMIZATION: Wrap OpportunityDetails in React.memo to prevent unnecessary re-renders when parent state updates.
+const OpportunityDetails: React.FC<OpportunityDetailsProps> = React.memo(({ darkMode, onBack }) => {
   const bgCard = darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200';
   const textMain = darkMode ? 'text-white' : 'text-slate-900';
   const textSub = darkMode ? 'text-slate-400' : 'text-slate-500';
-  const border = darkMode ? 'border-slate-800' : 'border-slate-200';
-
-  const stages = [
-    { name: 'Prospecting', status: 'completed' },
-    { name: 'Qualified', status: 'completed' },
-    { name: 'Discovery', status: 'completed' },
-    { name: 'Proposal Sent', status: 'current' },
-    { name: 'Negotiation', status: 'upcoming' },
-    { name: 'Closed', status: 'upcoming' },
-  ];
 
   return (
     <div className={`h-full flex flex-col overflow-hidden ${darkMode ? 'bg-slate-950' : 'bg-[#F3F4F6]'}`}>
@@ -86,8 +166,8 @@ const OpportunityDetails: React.FC<OpportunityDetailsProps> = ({ darkMode, langu
                         {/* Connecting Line */}
                         <div className={`absolute top-1/2 left-0 w-full h-0.5 -translate-y-1/2 -z-0 ${darkMode ? 'bg-slate-800' : 'bg-slate-100'}`}></div>
                         
-                        {stages.map((stage, index) => (
-                            <div key={index} className="relative z-10 flex flex-col items-center gap-2 bg-inherit px-2">
+                        {STAGES.map((stage, index) => (
+                            <div key={stage.name} className="relative z-10 flex flex-col items-center gap-2 bg-inherit px-2">
                                 <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold border-2 transition-colors
                                     ${stage.status === 'completed' ? 'bg-slate-900 border-slate-900 text-white dark:bg-white dark:border-white dark:text-slate-900' : 
                                       stage.status === 'current' ? 'bg-white border-dashed border-slate-900 text-slate-900 dark:bg-slate-900 dark:border-white dark:text-white' : 
@@ -176,7 +256,7 @@ const OpportunityDetails: React.FC<OpportunityDetailsProps> = ({ darkMode, langu
                             </div>
                             <div className="pb-6">
                                 <div className="flex items-center gap-2 mb-1">
-                                    <img src="https://picsum.photos/100/100?random=10" className="w-5 h-5 rounded-full" />
+                                    <img src="https://picsum.photos/100/100?random=10" alt="John" loading="lazy" className="w-5 h-5 rounded-full" />
                                     <span className={`text-sm font-medium ${textMain}`}>John scheduled a call</span>
                                     <span className={`text-xs ${textSub}`}>Apr 18, 2023 at 4:05PM</span>
                                 </div>
@@ -215,86 +295,15 @@ const OpportunityDetails: React.FC<OpportunityDetailsProps> = ({ darkMode, langu
                         </button>
                     </div>
 
-                    {/* Contact Card 1 */}
-                    <div className={`rounded-xl border p-4 shadow-sm mb-3 ${bgCard}`}>
-                         <div className="inline-block px-2 py-0.5 bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-300 text-[10px] font-bold uppercase tracking-wider rounded mb-3">
-                            Primary Contact
-                         </div>
-                         <div className="flex items-center gap-3 mb-4">
-                            <img src="https://picsum.photos/100/100?random=20" className="w-10 h-10 rounded-full" />
-                            <div>
-                                <p className={`text-sm font-bold ${textMain}`}>Jane Doe</p>
-                                <p className={`text-xs ${textSub}`}>Product Manager</p>
-                            </div>
-                            <button className="ml-auto text-slate-400 hover:text-slate-600">
-                                <MoreHorizontal className="w-4 h-4" />
-                            </button>
-                         </div>
-                         <div className="space-y-2">
-                             <div className="flex items-center gap-2 text-xs text-slate-500">
-                                <Mail className="w-3.5 h-3.5" />
-                                <span>leslie@market.com</span>
-                             </div>
-                             <div className="flex items-center gap-2 text-xs text-slate-500">
-                                <Phone className="w-3.5 h-3.5" />
-                                <span>(208) 555-0112</span>
-                             </div>
-                         </div>
-                    </div>
-
-                    {/* Contact Card 2 */}
-                    <div className={`rounded-xl border p-4 shadow-sm mb-3 ${bgCard}`}>
-                         <div className="inline-block px-2 py-0.5 bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 text-[10px] font-bold uppercase tracking-wider rounded mb-3">
-                            Key Influencer
-                         </div>
-                         <div className="flex items-center gap-3 mb-4">
-                            <img src="https://picsum.photos/100/100?random=21" className="w-10 h-10 rounded-full" />
-                            <div>
-                                <p className={`text-sm font-bold ${textMain}`}>John Smith</p>
-                                <p className={`text-xs ${textSub}`}>IT Director</p>
-                            </div>
-                            <button className="ml-auto text-slate-400 hover:text-slate-600">
-                                <MoreHorizontal className="w-4 h-4" />
-                            </button>
-                         </div>
-                         <div className="space-y-2">
-                             <div className="flex items-center gap-2 text-xs text-slate-500">
-                                <Mail className="w-3.5 h-3.5" />
-                                <span>john@market.com</span>
-                             </div>
-                             <div className="flex items-center gap-2 text-xs text-slate-500">
-                                <Phone className="w-3.5 h-3.5" />
-                                <span>(208) 555-0112</span>
-                             </div>
-                         </div>
-                    </div>
-
-                    {/* Contact Card 3 */}
-                    <div className={`rounded-xl border p-4 shadow-sm ${bgCard}`}>
-                         <div className="inline-block px-2 py-0.5 bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 text-[10px] font-bold uppercase tracking-wider rounded mb-3">
-                            Final Approver
-                         </div>
-                         <div className="flex items-center gap-3 mb-4">
-                            <img src="https://picsum.photos/100/100?random=22" className="w-10 h-10 rounded-full" />
-                            <div>
-                                <p className={`text-sm font-bold ${textMain}`}>Mike Ross</p>
-                                <p className={`text-xs ${textSub}`}>CTO</p>
-                            </div>
-                            <button className="ml-auto text-slate-400 hover:text-slate-600">
-                                <MoreHorizontal className="w-4 h-4" />
-                            </button>
-                         </div>
-                         <div className="space-y-2">
-                             <div className="flex items-center gap-2 text-xs text-slate-500">
-                                <Mail className="w-3.5 h-3.5" />
-                                <span>mike@market.com</span>
-                             </div>
-                             <div className="flex items-center gap-2 text-xs text-slate-500">
-                                <Phone className="w-3.5 h-3.5" />
-                                <span>(208) 555-0112</span>
-                             </div>
-                         </div>
-                    </div>
+                    {CONTACTS_DATA.map((contact) => (
+                      <ContactCard
+                        key={contact.id}
+                        contact={contact}
+                        bgCard={bgCard}
+                        textMain={textMain}
+                        textSub={textSub}
+                      />
+                    ))}
                 </div>
 
                 {/* Company Section */}
@@ -339,6 +348,6 @@ const OpportunityDetails: React.FC<OpportunityDetailsProps> = ({ darkMode, langu
       </div>
     </div>
   );
-};
+});
 
 export default OpportunityDetails;

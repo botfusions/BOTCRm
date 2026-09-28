@@ -1,8 +1,11 @@
 
-import { supabase } from './client';
+import { supabase, isDemoMode, demoId } from './client';
 import { Contact } from '../types';
+import { MOCK_CONTACTS } from '../constants';
 
 export const fetchContacts = async (): Promise<Contact[]> => {
+  // Demo modunda veritabanına gidilmez; örnek veri döner
+  if (isDemoMode()) return MOCK_CONTACTS.map((c) => ({ ...c }));
   try {
     const { data, error } = await supabase
       .from('bots_contacts')
@@ -31,6 +34,8 @@ export const fetchContacts = async (): Promise<Contact[]> => {
 };
 
 export const createContact = async (contact: Omit<Contact, 'id'>): Promise<Contact | null> => {
+  // Demo modunda yalnızca yerel sahte kayıt döner
+  if (isDemoMode()) return { ...contact, id: demoId() };
   try {
     // Mükerrer Kontrolü (Email)
     const { data: existing } = await supabase
@@ -75,6 +80,7 @@ export const createContact = async (contact: Omit<Contact, 'id'>): Promise<Conta
 };
 
 export const deleteContact = async (id: string): Promise<boolean> => {
+    if (isDemoMode()) return true;
     try {
         const { error } = await supabase.from('bots_contacts').delete().eq('id', id);
         return !error;

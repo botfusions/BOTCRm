@@ -2,8 +2,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { User, Mail, Phone, Send, Loader2, CheckCircle2, Zap } from 'lucide-react';
-import { createLead } from '../../services/leadService';
-import { Source, LeadStatus } from '../../types';
+import { supabase } from '../../services/client';
 
 interface QuickContactFormProps {
   language: 'TR' | 'EN';
@@ -22,7 +21,10 @@ const FORM_CONTENT = {
       email: "E-posta Adresiniz",
       phone: "Telefon Numaranız",
       btn: "Gönder ve Başlat",
-      success: "Mesajınız alındı! Ekibimiz sizinle iletişime geçecek."
+      success: "Mesajınız alındı! Ekibimiz sizinle iletişime geçecek.",
+      rateLimited: "Çok fazla deneme, lütfen biraz sonra tekrar deneyin.",
+      invalid: "Lütfen bilgileri kontrol edin.",
+      failed: "Gönderilemedi, lütfen tekrar deneyin."
     },
     EN: {
       title: "Get Started Now",
@@ -31,7 +33,10 @@ const FORM_CONTENT = {
       email: "Email Address",
       phone: "Phone Number",
       btn: "Submit and Start",
-      success: "Message received! Our team will contact you shortly."
+      success: "Message received! Our team will contact you shortly.",
+      rateLimited: "Too many attempts, please try again later.",
+      invalid: "Please check your details.",
+      failed: "Could not send, please try again."
     }
 };
 
@@ -42,30 +47,52 @@ const FORM_CONTENT = {
 const QuickContactForm: React.FC<QuickContactFormProps> = React.memo(({ language, id }) => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({ fullName: '', email: '', phone: '' });
+  // Honeypot: gerçek kullanıcılar görmez/doldurmaz; bot doldurursa sunucu sessizce yok sayar
+  const [honeypot, setHoneypot] = useState('');
 
   const t = FORM_CONTENT[language];
 
+  // Herkese açık form: doğrudan tabloya yazmaz; 'submit-lead' Edge Function
+  // (hız sınırı + doğrulama + service role) üzerinden kayıt oluşturur.
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
-    const result = await createLead({
-      ...formData,
-      source: Source.MANUAL,
-      status: LeadStatus.NEW,
-      value: 0,
-      tags: ['LANDING-PAGE-FORM'],
-      lastActivity: new Date().toISOString(),
-      avatarUrl: `https://ui-avatars.com/api/?name=${formData.fullName}&background=random`
-    });
+    setError(null);
 
-    if (result) {
-      setSuccess(true);
-      setFormData({ fullName: '', email: '', phone: '' });
-      setTimeout(() => setSuccess(false), 5000);
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke('submit-lead', {
+        body: {
+          fullName: formData.fullName.trim(),
+          email: formData.email.trim(),
+          phone: formData.phone.trim(),
+          website: honeypot
+        }
+      });
+
+      if (fnError) {
+        const status: number | undefined = (fnError as any)?.context?.status;
+        if (status === 429) setError(t.rateLimited);
+        else if (status === 400) setError(t.invalid);
+        else setError(t.failed);
+        return;
+      }
+
+      // Başarı mesajı yalnızca sunucu açıkça ok: true döndüğünde gösterilir
+      if (data && (data as any).ok === true) {
+        setSuccess(true);
+        setFormData({ fullName: '', email: '', phone: '' });
+        setHoneypot('');
+        setTimeout(() => setSuccess(false), 5000);
+      } else {
+        setError(t.failed);
+      }
+    } catch {
+      setError(t.failed);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
@@ -102,6 +129,22 @@ const QuickContactForm: React.FC<QuickContactFormProps> = React.memo(({ language
             </motion.div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Honeypot alanı: ekran dışında, erişilebilirlik ağacından ve sekme sırasından çıkarılmış */}
+              <div
+                aria-hidden="true"
+                style={{ position: 'absolute', left: '-10000px', top: 'auto', width: '1px', height: '1px', overflow: 'hidden' }}
+              >
+                <label htmlFor="qcf-website">Website</label>
+                <input
+                  id="qcf-website"
+                  type="text"
+                  name="website"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  value={honeypot}
+                  onChange={e => setHoneypot(e.target.value)}
+                />
+              </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest ml-1">{t.name}</label>
                 <div className="relative">
@@ -147,6 +190,10 @@ const QuickContactForm: React.FC<QuickContactFormProps> = React.memo(({ language
                   </div>
                 </div>
               </div>
+
+              {error && (
+                <p role="alert" className="text-center text-xs font-bold text-rose-500">{error}</p>
+              )}
 
               <button 
                 disabled={loading}

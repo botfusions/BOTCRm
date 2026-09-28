@@ -7,7 +7,7 @@ import {
   Trash2, X, Save, Wand2, Database, Zap, AlertTriangle, Terminal, Wifi, Globe, Mail, Phone, DollarSign
 } from 'lucide-react';
 import OpportunityDetails from './OpportunityDetails';
-import { GoogleGenAI, Type } from "@google/genai";
+import { supabase, isDemoMode } from '../services/client';
 
 interface LeadsProps {
   darkMode: boolean;
@@ -50,6 +50,7 @@ const Leads: React.FC<LeadsProps> = ({ darkMode, language = 'TR' }) => {
   const [loading, setLoading] = useState(true);
   const [errorType, setErrorType] = useState<string | null>(null);
   const [parsing, setParsing] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [rawText, setRawText] = useState('');
   const [duplicateError, setDuplicateError] = useState(false);
@@ -81,31 +82,46 @@ const Leads: React.FC<LeadsProps> = ({ darkMode, language = 'TR' }) => {
     }
   };
 
+  // AI ayrıştırma: Gemini anahtarı tarayıcıda DEĞİL; sunucudaki 'parse-lead' Edge Function çağrılır.
   const parseWithAI = async () => {
-    if (!rawText.trim()) return;
-    setParsing(true);
+    const text = rawText.trim();
+    if (!text) return;
+    setAiError(null);
     setDuplicateError(false);
-    try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: `Analiz et ve sadece JSON dön. Metin: "${rawText}". Çıktı şu anahtarları içermeli: fullName, email, phone, source (Instagram, WhatsApp, Manual, Ads). Eğer veri yoksa boş bırak.`,
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              fullName: { type: Type.STRING },
-              email: { type: Type.STRING },
-              phone: { type: Type.STRING },
-              source: { type: Type.STRING }
-            },
-            required: ["fullName"]
-          }
-        }
-      });
 
-      const result = JSON.parse(response.text || '{}');
+    const tr = language === 'TR';
+    if (text.length > 4000) {
+      setAiError(tr ? 'Metin çok uzun (en fazla 4000 karakter).' : 'Text is too long (max 4000 characters).');
+      return;
+    }
+    // Demo modunda sunucuya istek atılmaz
+    if (isDemoMode()) {
+      setAiError(tr ? 'Demo modunda AI analizi kapalı.' : 'AI parsing is disabled in demo mode.');
+      return;
+    }
+
+    setParsing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('parse-lead', { body: { text } });
+
+      if (error) {
+        // FunctionsHttpError durumunda context bir Response nesnesidir
+        const status: number | undefined = (error as any)?.context?.status;
+        if (status === 403) {
+          setAiError(tr ? 'Bu işlem için ekip yetkisi gerekiyor.' : 'Team membership is required for this action.');
+        } else if (status === 401) {
+          setAiError(tr ? 'Oturum süresi dolmuş, lütfen tekrar giriş yapın.' : 'Session expired, please sign in again.');
+        } else if (status === 400) {
+          setAiError(tr ? 'Geçersiz metin.' : 'Invalid text.');
+        } else if (status === 502) {
+          setAiError(tr ? 'AI servisi yanıt vermedi, tekrar deneyin.' : 'AI service failed, please try again.');
+        } else {
+          setAiError(tr ? 'AI analizi başarısız oldu.' : 'AI parsing failed.');
+        }
+        return;
+      }
+
+      const result = (data || {}) as { fullName?: string; email?: string; phone?: string; source?: string };
       setNewLead({
         fullName: result.fullName || '',
         email: result.email || '',
@@ -116,6 +132,7 @@ const Leads: React.FC<LeadsProps> = ({ darkMode, language = 'TR' }) => {
       setRawText('');
     } catch (error) {
       console.error("AI Parsing Error:", error);
+      setAiError(tr ? 'AI analizi başarısız oldu.' : 'AI parsing failed.');
     } finally {
       setParsing(false);
     }
@@ -256,6 +273,9 @@ const Leads: React.FC<LeadsProps> = ({ darkMode, language = 'TR' }) => {
                             {parsing ? <Loader2 className="w-4 h-4 animate-spin" /> : "Analiz Et"}
                         </button>
                     </div>
+                    {aiError && (
+                        <p role="alert" className="text-[11px] font-bold text-rose-500">{aiError}</p>
+                    )}
                 </div>
                 <div className="flex-[1.5]">
                     <form onSubmit={handleQuickSave} className="grid grid-cols-2 md:grid-cols-4 gap-4 items-end h-full">

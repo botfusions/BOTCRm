@@ -1,0 +1,14 @@
+# Supabase CLI yapılandırması (yalnızca Edge Function ayarları).
+# Proje: https://qlcbobvbircjhlglhfhr.supabase.co  (bağlamak için: supabase link --project-ref qlcbobvbircjhlglhfhr)
+
+project_id = "botcrm"
+
+# Oturum açmış ekip üyesi gerekir: Supabase ağ geçidi JWT'yi doğrular,
+# fonksiyon ayrıca getUser() + is_team_member() kontrolü yapar.
+[functions.parse-lead]
+verify_jwt = true
+
+# Herkese açık landing page formu: JWT gerekmez; doğrulama, honeypot ve
+# hız sınırı fonksiyonun içinde yapılır.
+[functions.submit-lead]
+verify_jwt = false

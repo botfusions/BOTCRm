@@ -54,7 +54,9 @@ cp .env.example .env
 # .env dosyasını düzenleyip gerçek değerleri girin:
 # - VITE_SUPABASE_URL
 # - VITE_SUPABASE_ANON_KEY
-# - GEMINI_API_KEY
+#
+# GEMINI_API_KEY .env'ye YAZILMAZ; Supabase secret olarak ayarlanır (bkz. SECURITY.md):
+#   supabase secrets set GEMINI_API_KEY=...
 ```
 
 > ⚠️ **Önemli:** `.env` dosyası Git'e **asla** eklenmez. Gizli bilgileriniz güvendedir.

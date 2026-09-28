@@ -12,7 +12,8 @@ export enum Source {
   INSTAGRAM = 'Instagram',
   WHATSAPP = 'WhatsApp',
   MANUAL = 'Manual',
-  ADS = 'Ads'
+  ADS = 'Ads',
+  VOICE = 'Sesli Asistan' // Botfusions Voice Agent (sesli_agent) randevu kayıtları
 }
 
 export interface Lead {

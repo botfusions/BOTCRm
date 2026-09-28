@@ -13,20 +13,21 @@ const Settings = lazy(() => import('./components/Settings'));
 const Contacts = lazy(() => import('./components/Contacts'));
 const Companies = lazy(() => import('./components/Companies'));
 const LandingPage = lazy(() => import('./components/landing/Page'));
-import { supabase } from './services/client';
+import { supabase, isDemoMode, clearDemoMode } from './services/client';
 
 const App: React.FC = () => {
-  const [showLanding, setShowLanding] = useState(true);
+  // Demo bayrağı (sessionStorage) varsa sayfa yenilense de panel açık kalır
+  const [showLanding, setShowLanding] = useState(() => !isDemoMode());
   const [activeTab, setActiveTab] = useState<Tab>(Tab.DASHBOARD);
   const [darkMode, setDarkMode] = useState(true);
   const [language, setLanguage] = useState<'TR' | 'EN'>('TR');
   const [initializing, setInitializing] = useState(true);
   
-  const [userProfile, setUserProfile] = useState({
-    fullName: '',
-    email: '',
-    phone: ''
-  });
+  const [userProfile, setUserProfile] = useState(() => (
+    isDemoMode()
+      ? { fullName: 'Demo Kullanıcı', email: 'demo@botscrm.com', phone: '' }
+      : { fullName: '', email: '', phone: '' }
+  ));
 
   useEffect(() => {
     // 1. Mevcut oturumu kontrol et
@@ -49,7 +50,7 @@ const App: React.FC = () => {
       if (session) {
         updateProfileFromSession(session.user);
         setShowLanding(false);
-      } else if (event === 'SIGNED_OUT') {
+      } else if (event === 'SIGNED_OUT' && !isDemoMode()) {
         setShowLanding(true);
       }
     });
@@ -75,10 +76,31 @@ const App: React.FC = () => {
     }
   }, [darkMode, showLanding]);
 
-  const handleLogin = () => setShowLanding(false);
-  
+  const handleLogin = () => {
+    // Demo girişinde profil başlığı için sahte kullanıcı bilgisi
+    if (isDemoMode()) {
+      setUserProfile({ fullName: 'Demo Kullanıcı', email: 'demo@botscrm.com', phone: '' });
+    }
+    setShowLanding(false);
+  };
+
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    // Demo bayrağı her durumda temizlenir
+    const wasDemo = isDemoMode();
+    clearDemoMode();
+    try {
+      sessionStorage.removeItem('botscrm_demo_started');
+    } catch {
+      // yok say
+    }
+    // Demo oturumunda Supabase'e çıkış isteği atılmaz
+    if (!wasDemo) {
+      try {
+        await supabase.auth.signOut();
+      } catch (err) {
+        console.error('Çıkış hatası:', err);
+      }
+    }
     setShowLanding(true);
   };
 

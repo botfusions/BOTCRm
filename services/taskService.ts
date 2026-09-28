@@ -1,8 +1,11 @@
 
-import { supabase } from './client';
+import { supabase, isDemoMode, demoId } from './client';
 import { Task } from '../types';
+import { MOCK_TASKS } from '../constants';
 
 export const fetchTasks = async (): Promise<Task[]> => {
+  // Demo modunda veritabanına gidilmez; örnek veri döner
+  if (isDemoMode()) return MOCK_TASKS.map((t) => ({ ...t }));
   try {
     const { data, error } = await supabase
       .from('bots_tasks')
@@ -29,6 +32,8 @@ export const fetchTasks = async (): Promise<Task[]> => {
 };
 
 export const createTask = async (task: Omit<Task, 'id'>): Promise<Task | null> => {
+  // Demo modunda yalnızca yerel sahte kayıt döner
+  if (isDemoMode()) return { ...task, id: demoId() };
   try {
     const { data, error } = await supabase
       .from('bots_tasks')
@@ -57,6 +62,7 @@ export const createTask = async (task: Omit<Task, 'id'>): Promise<Task | null> =
 };
 
 export const toggleTaskStatus = async (id: string, completed: boolean): Promise<boolean> => {
+  if (isDemoMode()) return true;
   try {
     const { error } = await supabase
       .from('bots_tasks')

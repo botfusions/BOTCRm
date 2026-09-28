@@ -39,12 +39,8 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, language = 'TR', onLogout
   const [formData, setFormData] = useState<BOTS_Settings>({
     full_name: '',
     email: '',
-    openai_key: '',
     supabase_url: '',
-    supabase_key: '',
-    telegram_bot_token: '',
     telegram_chat_id: '',
-    instagram_token: '',
     phone: '+90 ',
     whatsapp_id: '',
     smtp_host: 'smtp.gmail.com',
@@ -111,21 +107,16 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, language = 'TR', onLogout
                             <h2 className={`text-xl font-bold ${textMain}`}>Sistem API Anahtarları</h2>
                         </div>
                         <div className="space-y-5">
+                            {/* Gemini anahtarı artık tarayıcıya hiç gelmez; 'parse-lead' Edge Function sunucuda kullanır */}
+                            <div className="p-4 bg-indigo-500/5 border border-indigo-500/10 rounded-2xl">
+                                <p className="text-sm text-indigo-500 font-bold mb-1 flex items-center gap-2"><Key className="w-4 h-4" /> Google Gemini API Key</p>
+                                <p className="text-xs text-slate-500 leading-relaxed">Gemini anahtarı sunucuda (Supabase secret) tutulur.</p>
+                            </div>
                             <div>
-                                <label className={labelClass}>Google Gemini API Key (Zorunlu)</label>
-                                <input type="password" value={process.env.API_KEY || ''} disabled className={`${inputClass} opacity-50 cursor-not-allowed`} placeholder="Env dosyasından okunuyor..." />
-                                <p className="text-[10px] text-zinc-500 mt-2 font-medium italic">Gemini API Key güvenlik nedeniyle sistem değişkeni olarak tanımlanmıştır.</p>
+                                <label className={labelClass}>Supabase URL</label>
+                                <input type="text" value={formData.supabase_url} onChange={(e) => handleChange('supabase_url', e.target.value)} className={inputClass} />
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                <div>
-                                    <label className={labelClass}>Supabase URL</label>
-                                    <input type="text" value={formData.supabase_url} onChange={(e) => handleChange('supabase_url', e.target.value)} className={inputClass} />
-                                </div>
-                                <div>
-                                    <label className={labelClass}>Supabase Service Role Key</label>
-                                    <input type="password" value={formData.supabase_key} onChange={(e) => handleChange('supabase_key', e.target.value)} className={inputClass} />
-                                </div>
-                            </div>
+                            <p className="text-[10px] text-zinc-500 font-medium italic">Gizli anahtarlar tarayıcıda saklanmaz; sunucu ortam değişkenlerinde tutulur.</p>
                         </div>
                     </div>
                 </div>
@@ -146,6 +137,7 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, language = 'TR', onLogout
                             <div>
                                 <label className={labelClass}>n8n Webhook Production URL</label>
                                 <input type="text" value={formData.n8n_webhook_url} onChange={(e) => handleChange('n8n_webhook_url', e.target.value)} className={inputClass} placeholder="https://n8n.sirketiniz.com/webhook/..." />
+                                <p className="text-[10px] text-zinc-500 mt-2 font-medium italic">Webhook URL'si tahmin edilemez olmalı (uzun, rastgele bir yol kullanın) ve n8n tarafında mümkünse imza/başlık doğrulaması yapılmalı.</p>
                             </div>
                         </div>
                     </div>
@@ -159,15 +151,10 @@ const Settings: React.FC<SettingsProps> = ({ darkMode, language = 'TR', onLogout
                             <div className="p-3 bg-sky-500 rounded-2xl shadow-lg shadow-sky-600/20"><Send className="w-6 h-6 text-white" /></div>
                             <h2 className={`text-xl font-bold ${textMain}`}>Sosyal Medya Botları</h2>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            <div>
-                                <label className={labelClass}>Telegram Bot Token</label>
-                                <input type="password" value={formData.telegram_bot_token} onChange={(e) => handleChange('telegram_bot_token', e.target.value)} className={inputClass} placeholder="58129..." />
-                            </div>
-                            <div>
-                                <label className={labelClass}>Instagram Access Token</label>
-                                <input type="password" value={formData.instagram_token} onChange={(e) => handleChange('instagram_token', e.target.value)} className={inputClass} />
-                            </div>
+                        {/* Telegram / Instagram token'ları tarayıcıda gösterilmez ve buradan kaydedilmez */}
+                        <div className="p-4 bg-sky-500/5 border border-sky-500/10 rounded-2xl">
+                            <p className="text-sm text-sky-500 font-bold mb-1 flex items-center gap-2"><Key className="w-4 h-4" /> Telegram Bot Token · Instagram Access Token</p>
+                            <p className="text-xs text-slate-500 leading-relaxed">Gizli anahtarlar tarayıcıda saklanmaz; sunucu ortam değişkenlerinde tutulur.</p>
                         </div>
                     </div>
                 </div>

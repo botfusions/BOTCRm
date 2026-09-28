@@ -1,8 +1,11 @@
 
-import { supabase } from './client';
+import { supabase, isDemoMode, demoId } from './client';
 import { Lead, LeadStatus, Source } from '../types';
+import { MOCK_LEADS } from '../constants';
 
 export const fetchLeads = async (): Promise<Lead[]> => {
+  // Demo modunda veritabanına gidilmez; örnek veri döner
+  if (isDemoMode()) return MOCK_LEADS.map((l) => ({ ...l }));
   try {
     const { data, error } = await supabase
       .from('bots_leads')
@@ -33,6 +36,10 @@ export const fetchLeads = async (): Promise<Lead[]> => {
 };
 
 export const createLead = async (lead: Omit<Lead, 'id'>): Promise<Lead | null> => {
+  // Demo modunda yalnızca yerel sahte kayıt döner
+  if (isDemoMode()) {
+    return { ...lead, id: demoId(), lastActivity: lead.lastActivity || new Date().toISOString() };
+  }
   try {
     // 1. Mükerrer Kontrolü (Email)
     const { data: existing } = await supabase
@@ -81,6 +88,7 @@ export const createLead = async (lead: Omit<Lead, 'id'>): Promise<Lead | null> =
 };
 
 export const updateLeadStatus = async (id: string, status: LeadStatus): Promise<boolean> => {
+  if (isDemoMode()) return true;
   try {
     const { error } = await supabase
       .from('bots_leads')

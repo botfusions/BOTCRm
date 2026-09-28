@@ -1,8 +1,11 @@
 
-import { supabase } from './client';
+import { supabase, isDemoMode, demoId } from './client';
 import { Company } from '../types';
+import { MOCK_COMPANIES } from '../constants';
 
 export const fetchCompanies = async (): Promise<Company[]> => {
+  // Demo modunda veritabanına gidilmez; örnek veri döner
+  if (isDemoMode()) return MOCK_COMPANIES.map((c) => ({ ...c }));
   try {
     const { data, error } = await supabase
       .from('bots_companies')
@@ -31,6 +34,8 @@ export const fetchCompanies = async (): Promise<Company[]> => {
 };
 
 export const createCompany = async (company: Omit<Company, 'id'>): Promise<Company | null> => {
+  // Demo modunda yalnızca yerel sahte kayıt döner
+  if (isDemoMode()) return { ...company, id: demoId() };
   try {
     // Mükerrer Kontrolü (İsim)
     const { data: existing } = await supabase

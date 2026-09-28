@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Lead, LeadStatus, Source } from '../types';
 import { fetchLeads, updateLeadStatus } from '../services/leadService';
 import { PIPELINE_COLUMNS } from '../constants';
-import { MoreHorizontal, Instagram, MessageSquare, Mail, Megaphone, Calendar, DollarSign, Loader2, Sparkles } from 'lucide-react';
+import { MoreHorizontal, Instagram, MessageSquare, Mail, Megaphone, Mic, Calendar, DollarSign, Loader2, Sparkles } from 'lucide-react';
 
 interface PipelineProps {
   darkMode: boolean;
@@ -14,6 +14,7 @@ const SourceIcon: React.FC<{ source: Source }> = React.memo(({ source }) => {
     case Source.INSTAGRAM: return <Instagram className="w-3 h-3" />;
     case Source.WHATSAPP: return <MessageSquare className="w-3 h-3" />;
     case Source.ADS: return <Megaphone className="w-3 h-3" />;
+    case Source.VOICE: return <Mic className="w-3 h-3" />;
     default: return <Mail className="w-3 h-3" />;
   }
 });
